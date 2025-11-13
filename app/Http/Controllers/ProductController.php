@@ -74,6 +74,14 @@ class ProductController extends Controller
             $location_id = request()->get('location_id', null);
             $permitted_locations = auth()->user()->permitted_locations();
 
+            // Determine which locations to use for variation_location_details join
+            $locations_for_stock = $permitted_locations;
+            if (!empty($location_id) && $location_id != 'none') {
+                if ($permitted_locations == 'all' || in_array($location_id, $permitted_locations)) {
+                    $locations_for_stock = [$location_id];
+                }
+            }
+
             $query = Product::with(['media'])
                 ->leftJoin('brands', 'products.brand_id', '=', 'brands.id')
                 ->join('units', 'products.unit_id', '=', 'units.id')
@@ -81,10 +89,12 @@ class ProductController extends Controller
                 ->leftJoin('categories as c2', 'products.sub_category_id', '=', 'c2.id')
                 ->leftJoin('tax_rates', 'products.tax', '=', 'tax_rates.id')
                 ->join('variations as v', 'v.product_id', '=', 'products.id')
-                ->leftJoin('variation_location_details as vld', function ($join) use ($permitted_locations) {
+                ->leftJoin('variation_location_details as vld', function ($join) use ($locations_for_stock) {
                     $join->on('vld.variation_id', '=', 'v.id');
-                    if ($permitted_locations != 'all') {
-                        $join->whereIn('vld.location_id', $permitted_locations);
+                    if ($locations_for_stock != 'all') {
+                        if (is_array($locations_for_stock)) {
+                            $join->whereIn('vld.location_id', $locations_for_stock);
+                        }
                     }
                 })
                 ->whereNull('v.deleted_at')
@@ -142,6 +152,15 @@ class ProductController extends Controller
                 $products->addSelect('woocommerce_disable_sync');
             }
 
+            // Load product_locations relationship based on location filter
+            if (!empty($location_id) && $location_id != 'none') {
+                $products->with(['product_locations' => function ($query) use ($location_id) {
+                    $query->where('product_locations.location_id', $location_id);
+                }]);
+            } else {
+                $products->with('product_locations');
+            }
+
             $products->groupBy('products.id');
 
             $type = request()->get('type', null);
@@ -193,7 +212,14 @@ class ProductController extends Controller
             return Datatables::of($products)
                 ->addColumn(
                     'product_locations',
-                    function ($row) {
+                    function ($row) use ($location_id) {
+                        if (!empty($location_id) && $location_id != 'none') {
+                            // Show only selected location if filter is applied
+                            $filtered_locations = $row->product_locations->filter(function ($location) use ($location_id) {
+                                return $location->id == $location_id;
+                            });
+                            return $filtered_locations->implode('name', ', ');
+                        }
                         return $row->product_locations->implode('name', ', ');
                     }
                 )

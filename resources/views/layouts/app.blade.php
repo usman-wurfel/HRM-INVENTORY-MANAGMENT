@@ -36,6 +36,20 @@
 
     @yield('css')
 
+    <style>
+        /* Sidebar active items color - Only in sidebar */
+        #side-bar .tw-text-primary-700,
+        #side-bar a.tw-text-primary-700,
+        #side-bar .tw-bg-gray-200.tw-text-primary-700,
+        #side-bar a.tw-bg-gray-200.tw-text-primary-700,
+        aside.side-bar .tw-text-primary-700,
+        aside.side-bar a.tw-text-primary-700,
+        aside.side-bar .tw-bg-gray-200.tw-text-primary-700,
+        aside.side-bar a.tw-bg-gray-200.tw-text-primary-700 {
+            color: #e8041c !important;
+        }
+    </style>
+
 </head>
 <body
     class="tw-font-sans tw-antialiased tw-text-gray-900 tw-bg-gray-100 @if ($pos_layout) hold-transition lockscreen @else hold-transition skin-@if (!empty(session('business.theme_color'))){{ session('business.theme_color') }}@else{{ 'blue-light' }} @endif sidebar-mini @endif" >

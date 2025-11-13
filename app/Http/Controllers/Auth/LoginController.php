@@ -141,6 +141,32 @@ class LoginController extends Controller
     protected function redirectTo()
     {
         $user = \Auth::user();
+        
+        // Check if user is not admin
+        $is_admin = $this->businessUtil->is_admin($user);
+     
+        if (! $is_admin) {
+            // Check if HRM module is enabled
+         
+              
+                // Check if user has any HRM permission
+                $has_hrm_permission = $user->can('essentials.crud_leave_type') || 
+                                     $user->can('essentials.crud_all_leave') || 
+                                     $user->can('essentials.crud_own_leave') ||
+                                     $user->can('essentials.crud_all_attendance') || 
+                                     $user->can('essentials.view_own_attendance') ||
+                                     $user->can('essentials.access_sales_target') ||
+                                     $user->can('essentials.loan_request') ||
+                                     $user->can('essentials.loan_manage') ||
+                                     $user->can('essentials.crud_department') ||
+                                     $user->can('essentials.crud_designation');
+                                  
+                if ($has_hrm_permission) {
+                    return '/hrm/dashboard';
+                }
+            
+        }
+        
         if (! $user->can('dashboard.data') && $user->can('sell.create')) {
             return '/pos/create';
         }

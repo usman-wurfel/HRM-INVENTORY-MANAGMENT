@@ -6057,8 +6057,8 @@ class TransactionUtil extends Util
                 return null;
             }
 
-            // Only create expense if payment status is paid or partial
-            if (!in_array($transaction->payment_status, ['paid', 'partial'])) {
+            // Only create expense if payment status is paid, partial, or due
+            if (!in_array($transaction->payment_status, ['paid', 'partial', 'due'])) {
                 return null;
             }
 
@@ -6075,9 +6075,13 @@ class TransactionUtil extends Util
                 if ($transaction->type == 'purchase_return') {
                     $total_paid = $transaction->final_total;
                 }
-                if ($existing_expense->final_total != $total_paid) {
-                    $existing_expense->final_total = $total_paid;
-                    $existing_expense->total_before_tax = $total_paid;
+                
+                // For due payments, use final_total instead of total_paid
+                $expense_amount = $transaction->payment_status == 'due' ? $transaction->final_total : $total_paid;
+                
+                if ($existing_expense->final_total != $expense_amount) {
+                    $existing_expense->final_total = $expense_amount;
+                    $existing_expense->total_before_tax = $expense_amount;
                     $existing_expense->save();
                     $this->updatePaymentStatus($existing_expense->id, $existing_expense->final_total);
                 }
@@ -6107,7 +6111,11 @@ class TransactionUtil extends Util
                 $total_paid = $transaction->final_total;
             }
 
-            if ($total_paid <= 0) {
+            // For due payments, use final_total instead of total_paid
+            // For paid/partial, use total_paid
+            $expense_amount = $transaction->payment_status == 'due' ? $transaction->final_total : $total_paid;
+
+            if ($expense_amount <= 0) {
                 return null;
             }
 
@@ -6120,12 +6128,12 @@ class TransactionUtil extends Util
                 'business_id' => $transaction->business_id,
                 'type' => 'expense',
                 'status' => 'final',
-                'payment_status' => $transaction->payment_status == 'paid' ? 'paid' : 'partial',
+                'payment_status' => $transaction->payment_status, // Keep same payment status (paid, partial, or due)
                 'transaction_date' => $transaction->transaction_date,
                 'location_id' => $transaction->location_id,
                 'expense_category_id' => $expense_category->id,
-                'final_total' => $total_paid,
-                'total_before_tax' => $total_paid,
+                'final_total' => $expense_amount,
+                'total_before_tax' => $expense_amount,
                 'ref_no' => $ref_no,
                 'additional_notes' => 'Auto-generated from ' . $transaction->type . ' #' . $transaction->ref_no,
                 'created_by' => $transaction->created_by,
@@ -6133,36 +6141,39 @@ class TransactionUtil extends Util
 
             $expense = Transaction::create($expense_data);
 
-            // Copy payment lines from purchase/return to expense
+            // Copy payment lines from purchase/return to expense (only if payments exist)
             $purchase_payments = TransactionPayment::where('transaction_id', $transaction->id)
                 ->where('is_return', 0)
                 ->get();
 
-            foreach ($purchase_payments as $payment) {
-                $expense_payment_data = [
-                    'transaction_id' => $expense->id,
-                    'amount' => $payment->amount,
-                    'method' => $payment->method,
-                    'paid_on' => $payment->paid_on,
-                    'payment_for' => $payment->payment_for,
-                    'business_id' => $transaction->business_id,
-                    'created_by' => $transaction->created_by,
-                    'note' => 'From ' . $transaction->type . ' #' . $transaction->ref_no,
-                ];
+            // Only create payment lines if payments exist (not for due payments)
+            if ($purchase_payments->count() > 0) {
+                foreach ($purchase_payments as $payment) {
+                    $expense_payment_data = [
+                        'transaction_id' => $expense->id,
+                        'amount' => $payment->amount,
+                        'method' => $payment->method,
+                        'paid_on' => $payment->paid_on,
+                        'payment_for' => $payment->payment_for,
+                        'business_id' => $transaction->business_id,
+                        'created_by' => $transaction->created_by,
+                        'note' => 'From ' . $transaction->type . ' #' . $transaction->ref_no,
+                    ];
 
-                if (!empty($payment->account_id)) {
-                    $expense_payment_data['account_id'] = $payment->account_id;
+                    if (!empty($payment->account_id)) {
+                        $expense_payment_data['account_id'] = $payment->account_id;
+                    }
+
+                    if (!empty($payment->transaction_no)) {
+                        $expense_payment_data['transaction_no'] = $payment->transaction_no;
+                    }
+
+                    if (!empty($payment->payment_ref_no)) {
+                        $expense_payment_data['payment_ref_no'] = $payment->payment_ref_no;
+                    }
+
+                    TransactionPayment::create($expense_payment_data);
                 }
-
-                if (!empty($payment->transaction_no)) {
-                    $expense_payment_data['transaction_no'] = $payment->transaction_no;
-                }
-
-                if (!empty($payment->payment_ref_no)) {
-                    $expense_payment_data['payment_ref_no'] = $payment->payment_ref_no;
-                }
-
-                TransactionPayment::create($expense_payment_data);
             }
 
             // Update payment status

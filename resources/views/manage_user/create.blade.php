@@ -70,16 +70,6 @@
         </div>
       </div>
       <div class="clearfix"></div>
-      <div class="col-md-12">
-        <div class="form-group">
-          {!! Form::label('employee_documents', __( 'lang_v1.employee_documents' ) . ':') !!}
-          <div class="input-group">
-            {!! Form::file('employee_documents[]', ['class' => 'form-control', 'multiple', 'accept' => '.pdf,.doc,.docx,.jpg,.jpeg,.png', 'id' => 'employee_documents']); !!}
-          </div>
-          <p class="help-block">@lang('lang_v1.employee_documents_help')</p>
-          <div id="document_preview" class="mt-3"></div>
-        </div>
-      </div>
   @endcomponent
   </div>
   <div class="col-md-12">

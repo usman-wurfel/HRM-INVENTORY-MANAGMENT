@@ -558,10 +558,15 @@ class SellPosController extends Controller
                 $input['is_kitchen_order'] = request()->get('is_kitchen_order');
             }
 
-            //upload document
-            $input['document'] = $this->transactionUtil->uploadFile($request, 'sell_document', 'documents');
+            //upload document (single file for backward compatibility - only if not array)
+            if ($request->hasFile('sell_document') && !is_array($request->file('sell_document'))) {
+                $input['document'] = $this->transactionUtil->uploadFile($request, 'sell_document', 'documents');
+            }
 
             $transaction = $this->transactionUtil->createSellTransaction($business_id, $input, $invoice_total, $user_id);
+
+            //Upload multiple documents using Media model (after transaction is created)
+            Media::uploadMedia($business_id, $transaction, $request, 'sell_document', false, 'sell_document');
 
             //Upload Shipping documents
             Media::uploadMedia($business_id, $transaction, $request, 'shipping_documents', false, 'shipping_document');
@@ -1365,11 +1370,16 @@ class SellPosController extends Controller
                     $input['is_kitchen_order'] = request()->get('is_kitchen_order');
                 }
 
-                //upload document
-                $document_name = $this->transactionUtil->uploadFile($request, 'sell_document', 'documents');
-                if (!empty($document_name)) {
-                    $input['document'] = $document_name;
+                //upload document (single file for backward compatibility - only if not array)
+                if ($request->hasFile('sell_document') && !is_array($request->file('sell_document'))) {
+                    $document_name = $this->transactionUtil->uploadFile($request, 'sell_document', 'documents');
+                    if (!empty($document_name)) {
+                        $input['document'] = $document_name;
+                    }
                 }
+
+                //Upload multiple documents using Media model
+                Media::uploadMedia($business_id, $transaction, $request, 'sell_document', false, 'sell_document');
 
                 if ($request->input('additional_expense_value_1') != '') {
                     $input['additional_expense_key_1'] = $request->input('additional_expense_key_1');
@@ -1729,11 +1739,16 @@ class SellPosController extends Controller
                         $input['tax_rate_id'] = null;
                     }
 
-                    //upload document
-                    $document_name = $this->transactionUtil->uploadFile($request, 'sell_document', 'documents');
-                    if (!empty($document_name)) {
-                        $input['document'] = $document_name;
+                    //upload document (single file for backward compatibility - only if not array)
+                    if ($request->hasFile('sell_document') && !is_array($request->file('sell_document'))) {
+                        $document_name = $this->transactionUtil->uploadFile($request, 'sell_document', 'documents');
+                        if (!empty($document_name)) {
+                            $input['document'] = $document_name;
+                        }
                     }
+
+                    //Upload multiple documents using Media model
+                    Media::uploadMedia($business_id, $transaction, $request, 'sell_document', false, 'sell_document');
 
                     // Update transaction
                     $transaction = $this->transactionUtil->updateSellTransaction($id, $business_id, $input, $invoice_total, $user_id);

@@ -273,14 +273,14 @@
 
     @component('components.widget', ['class' => 'box-primary'])
         <div class="row">
-            <div class="col-sm-4 @if(!session('business.enable_price_tax')) hide @endif">
+            <div class="col-sm-4">
               <div class="form-group">
                 {!! Form::label('tax', __('product.applicable_tax') . ':') !!}
                   {!! Form::select('tax', $taxes, $product->tax, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2'], $tax_attributes); !!}
               </div>
             </div>
 
-            <div class="col-sm-4 @if(!session('business.enable_price_tax')) hide @endif">
+            <div class="col-sm-4">
               <div class="form-group">
                 {!! Form::label('tax_type', __('product.selling_price_tax_type') . ':*') !!}
                   {!! Form::select('tax_type',['inclusive' => __('product.inclusive'), 'exclusive' => __('product.exclusive')], $product->tax_type,

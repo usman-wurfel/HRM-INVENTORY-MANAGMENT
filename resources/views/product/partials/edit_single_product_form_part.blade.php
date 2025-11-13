@@ -1,21 +1,12 @@
-@if(!session('business.enable_price_tax')) 
-  @php
-    $default = 0;
-    $class = 'hide';
-  @endphp
-@else
-  @php
+@php
     $default = null;
     $class = '';
-  @endphp
-@endif
-@php
     $common_settings = session()->get('business.common_settings');
 @endphp
 
 <div class="col-sm-12"><br>
     <div class="table-responsive">
-    <table class="table table-bordered add-product-price-table table-condensed {{$class}}">
+    <table class="table table-bordered add-product-price-table table-condensed">
         <tr>
           <th>@lang('product.default_purchase_price')</th>
           <th>@lang('product.profit_percent') @show_tooltip(__('tooltip.profit_percent'))</th>

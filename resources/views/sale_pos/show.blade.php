@@ -69,6 +69,14 @@
               &nbsp;{{ __('purchase.download_document') }}
           </a>
         @endif
+        @php
+          $sell_documents = $sell->media->where('model_media_type', 'sell_document')->all();
+        @endphp
+        @if(count($sell_documents) > 0)
+          <br><br>
+          <strong>@lang('purchase.attach_document'):</strong>
+          @include('sell.partials.media_table', ['medias' => $sell_documents])
+        @endif
       </div>
       <div class="@if(!empty($export_custom_fields)) col-sm-3 @else col-sm-4 @endif">
         @if(!empty($sell->contact->supplier_business_name))

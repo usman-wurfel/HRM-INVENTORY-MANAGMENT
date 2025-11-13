@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\BusinessLocation;
 use App\ExpenseCategory;
+use App\Product;
 use App\PurchaseLine;
 use App\Transaction;
 use App\TransactionSellLinesPurchaseLines;
@@ -362,6 +363,25 @@ class StockTransferController extends Controller
             
             // Create expense refund (credit) entry at source location
             $this->createExpenseRefundForStockTransfer($sell_transfer, $business_id, $user_id);
+
+            // Add destination location to product locations if not already present
+            $destination_location_id = $purchase_transfer->location_id;
+            if (!empty($products)) {
+                $unique_product_ids = array_unique(array_column($products, 'product_id'));
+                foreach ($unique_product_ids as $product_id) {
+                    $product = Product::where('business_id', $business_id)
+                        ->with('product_locations')
+                        ->find($product_id);
+                    
+                    if ($product) {
+                        $product_locations = $product->product_locations->pluck('id')->toArray();
+                        if (!in_array($destination_location_id, $product_locations)) {
+                            $product_locations[] = $destination_location_id;
+                            $product->product_locations()->sync($product_locations);
+                        }
+                    }
+                }
+            }
 
             $output = ['success' => 1,
                 'msg' => __('lang_v1.stock_transfer_added_successfully'),
@@ -864,6 +884,25 @@ class StockTransferController extends Controller
 
             $this->transactionUtil->activityLog($sell_transfer, 'edited', $sell_transfer_before);
 
+            // Add destination location to product locations if not already present
+            $destination_location_id = $purchase_transfer->location_id;
+            if (!empty($products)) {
+                $unique_product_ids = array_unique(array_column($products, 'product_id'));
+                foreach ($unique_product_ids as $product_id) {
+                    $product = Product::where('business_id', $business_id)
+                        ->with('product_locations')
+                        ->find($product_id);
+                    
+                    if ($product) {
+                        $product_locations = $product->product_locations->pluck('id')->toArray();
+                        if (!in_array($destination_location_id, $product_locations)) {
+                            $product_locations[] = $destination_location_id;
+                            $product->product_locations()->sync($product_locations);
+                        }
+                    }
+                }
+            }
+
             $output = ['success' => 1,
                 'msg' => __('lang_v1.updated_succesfully'),
             ];
@@ -948,6 +987,31 @@ class StockTransferController extends Controller
             $purchase_transfer->save();
             $sell_transfer->status = $status == 'completed' ? 'final' : $status;
             $sell_transfer->save();
+
+            // Add destination location to product locations if status is completed and location not already present
+            if ($status == 'completed') {
+                $destination_location_id = $purchase_transfer->location_id;
+                $unique_product_ids = [];
+                foreach ($sell_transfer->sell_lines as $sell_line) {
+                    if (!in_array($sell_line->product_id, $unique_product_ids)) {
+                        $unique_product_ids[] = $sell_line->product_id;
+                    }
+                }
+                
+                foreach ($unique_product_ids as $product_id) {
+                    $product = Product::where('business_id', $business_id)
+                        ->with('product_locations')
+                        ->find($product_id);
+                    
+                    if ($product) {
+                        $product_locations = $product->product_locations->pluck('id')->toArray();
+                        if (!in_array($destination_location_id, $product_locations)) {
+                            $product_locations[] = $destination_location_id;
+                            $product->product_locations()->sync($product_locations);
+                        }
+                    }
+                }
+            }
 
             DB::commit();
 

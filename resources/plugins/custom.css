@@ -78,7 +78,19 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-weight: bold;
   margin-bottom: 8px; }
 .sidebar-menu li.active > a {
-  font-weight: 800 !important; }
+  font-weight: 800 !important;
+  color: #e8041c !important; }
+
+/* Tailwind classes override for active sidebar items - Only in sidebar */
+#side-bar .tw-text-primary-700,
+#side-bar a.tw-text-primary-700,
+#side-bar .tw-bg-gray-200.tw-text-primary-700,
+#side-bar a.tw-bg-gray-200.tw-text-primary-700,
+aside.side-bar .tw-text-primary-700,
+aside.side-bar a.tw-text-primary-700,
+aside.side-bar .tw-bg-gray-200.tw-text-primary-700,
+aside.side-bar a.tw-bg-gray-200.tw-text-primary-700 {
+  color: #e8041c !important; }
 .sidebar-menu > li > a {
   font-weight: 400 !important;
   padding: 10px 16px 10px 24px; }
@@ -244,7 +256,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 
 .tw-text-primary-700 {
   --tw-text-opacity: 1;
-  color: rgb(245 216 21 / var(--tw-text-opacity)) !important;
+  color: rgb(232 4 28 / var(--tw-text-opacity)) !important;
 }
 
 .tw-from-primary-800 {
@@ -491,6 +503,8 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   border-right: 0px !important; }
 .skin-blue .sidebar-menu > li:hover > a, .skin-blue .sidebar-menu > li.active > a, .skin-blue .sidebar-menu > li.menu-open > a, .skin-black .sidebar-menu > li:hover > a, .skin-black .sidebar-menu > li.active > a, .skin-black .sidebar-menu > li.menu-open > a, .skin-purple .sidebar-menu > li:hover > a, .skin-purple .sidebar-menu > li.active > a, .skin-purple .sidebar-menu > li.menu-open > a, .skin-green .sidebar-menu > li:hover > a, .skin-green .sidebar-menu > li.active > a, .skin-green .sidebar-menu > li.menu-open > a, .skin-red .sidebar-menu > li:hover > a, .skin-red .sidebar-menu > li.active > a, .skin-red .sidebar-menu > li.menu-open > a, .skin-yellow .sidebar-menu > li:hover > a, .skin-yellow .sidebar-menu > li.active > a, .skin-yellow .sidebar-menu > li.menu-open > a {
   background: #1d1f33 !important; }
+.skin-blue .sidebar-menu > li.active > a, .skin-black .sidebar-menu > li.active > a, .skin-purple .sidebar-menu > li.active > a, .skin-green .sidebar-menu > li.active > a, .skin-red .sidebar-menu > li.active > a, .skin-yellow .sidebar-menu > li.active > a {
+  color: #e8041c !important; }
 .skin-blue .sidebar-menu > li > .treeview-menu, .skin-black .sidebar-menu > li > .treeview-menu, .skin-purple .sidebar-menu > li > .treeview-menu, .skin-green .sidebar-menu > li > .treeview-menu, .skin-red .sidebar-menu > li > .treeview-menu, .skin-yellow .sidebar-menu > li > .treeview-menu {
   background: #1d1f33 !important; }
 
@@ -500,6 +514,8 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .skin-blue-light .sidebar-menu > li:hover > a, .skin-blue-light .sidebar-menu > li.active > a, .skin-blue-light .sidebar-menu > li.menu-open > a, .skin-black-light .sidebar-menu > li:hover > a, .skin-black-light .sidebar-menu > li.active > a, .skin-black-light .sidebar-menu > li.menu-open > a, .skin-purple-light .sidebar-menu > li:hover > a, .skin-purple-light .sidebar-menu > li.active > a, .skin-purple-light .sidebar-menu > li.menu-open > a, .skin-green-light .sidebar-menu > li:hover > a, .skin-green-light .sidebar-menu > li.active > a, .skin-green-light .sidebar-menu > li.menu-open > a, .skin-red-light .sidebar-menu > li:hover > a, .skin-red-light .sidebar-menu > li.active > a, .skin-red-light .sidebar-menu > li.menu-open > a, .skin-yellow-light .sidebar-menu > li:hover > a, .skin-yellow-light .sidebar-menu > li.active > a, .skin-yellow-light .sidebar-menu > li.menu-open > a {
   background: #f4f4f5 !important;
   color: rgba(0, 0, 0, 0.9); }
+.skin-blue-light .sidebar-menu > li.active > a, .skin-black-light .sidebar-menu > li.active > a, .skin-purple-light .sidebar-menu > li.active > a, .skin-green-light .sidebar-menu > li.active > a, .skin-red-light .sidebar-menu > li.active > a, .skin-yellow-light .sidebar-menu > li.active > a {
+  color: #e8041c !important; }
 .skin-blue-light .sidebar-menu > li > .treeview-menu, .skin-black-light .sidebar-menu > li > .treeview-menu, .skin-purple-light .sidebar-menu > li > .treeview-menu, .skin-green-light .sidebar-menu > li > .treeview-menu, .skin-red-light .sidebar-menu > li > .treeview-menu, .skin-yellow-light .sidebar-menu > li > .treeview-menu {
   background: #f4f4f5 !important; }
 .skin-blue-light .sidebar-menu > li.active > a, .skin-black-light .sidebar-menu > li.active > a, .skin-purple-light .sidebar-menu > li.active > a, .skin-green-light .sidebar-menu > li.active > a, .skin-red-light .sidebar-menu > li.active > a, .skin-yellow-light .sidebar-menu > li.active > a {

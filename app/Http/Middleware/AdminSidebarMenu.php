@@ -183,6 +183,13 @@ class AdminSidebarMenu
                             //     ['icon' => '', 'active' => request()->segment(1) == 'import-products']
                             // );
                         }
+                        // if (auth()->user()->can('product.update')) {
+                        //     $sub->url(
+                        //         action([\App\Http\Controllers\SellingPriceGroupController::class, 'updateProductPrice']),
+                        //         __('lang_v1.update_product_price'),
+                        //         ['icon' => '', 'active' => request()->segment(1) == 'update-product-price']
+                        //     );
+                        // }
                         // Import opening stock - Hidden
                         // if (auth()->user()->can('product.opening_stock')) {
                         //     $sub->url(
