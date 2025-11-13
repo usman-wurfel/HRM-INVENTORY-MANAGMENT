@@ -328,6 +328,7 @@ return [
         'loan_manage' => 'Manage Loan',
         'loan_amount' => 'Loan Amount',
         'add_loan' => 'Add Loan',
+        'apply_loan' => 'Apply Loan',
         'monthly_deduction' => 'Monthly Deduction',
         'loan_deduction_cannot_be_removed' => 'Loan deduction cannot be removed',
         'remaining_loan' => 'Remaining Loan',

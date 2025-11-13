@@ -148,7 +148,6 @@ class LoginController extends Controller
         if (! $is_admin) {
             // Check if HRM module is enabled
          
-              
                 // Check if user has any HRM permission
                 $has_hrm_permission = $user->can('essentials.crud_leave_type') || 
                                      $user->can('essentials.crud_all_leave') || 
