@@ -31,9 +31,10 @@
 
                                             $diff = $start_date->diffInDays($end_date);
                                             $diff += 1;
-                                            
+                                            $start_day_name = $start_date->format('l');
+                                            $end_day_name = $end_date->format('l');
                                         @endphp
-                                        <td>{{ @format_date($start_date) .' - '.@format_date($end_date).' ('.$diff.\Str::plural(__('lang_v1.day'), $diff).')' }}</td>
+                                        <td>{{ @format_date($start_date) .' ('.$start_day_name.') - '.@format_date($end_date).' ('.$end_day_name.') ('.$diff.\Str::plural(__('lang_v1.day'), $diff).')' }}</td>
                                         <td>{{$holiday->location ?? __("lang_v1.all")}}</td>
                                         <td>{{$holiday->note}}</td>
                                     </tr>

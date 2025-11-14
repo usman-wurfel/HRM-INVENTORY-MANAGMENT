@@ -181,9 +181,11 @@ class StockAdjustmentController extends Controller
         try {
             DB::beginTransaction();
 
-            $input_data = $request->only(['location_id', 'transaction_date', 'adjustment_type', 'additional_notes', 'final_total', 'ref_no']);
+            $input_data = $request->only(['location_id', 'transaction_date', 'additional_notes', 'final_total', 'ref_no']);
             // Set total_amount_recovered to 0 as field is removed from form
             $input_data['total_amount_recovered'] = 0;
+            // Set adjustment_type to 'abnormal' by default
+            $input_data['adjustment_type'] = 'abnormal';
             $business_id = $request->session()->get('user.business_id');
 
             //Check if subscribed or not

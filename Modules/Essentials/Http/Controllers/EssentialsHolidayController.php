@@ -94,8 +94,12 @@ class EssentialsHolidayController extends Controller
                         $diff += 1;
                         $start_date_formated = $this->moduleUtil->format_date($start_date);
                         $end_date_formated = $this->moduleUtil->format_date($end_date);
+                        
+                        // Add day name to start date
+                        $start_day_name = $start_date->format('l'); // Full day name (Monday, Tuesday, etc.)
+                        $end_day_name = $end_date->format('l'); // Full day name
 
-                        return $start_date_formated.' - '.$end_date_formated.' ('.$diff.\Str::plural(__('lang_v1.day'), $diff).')';
+                        return $start_date_formated.' ('.$start_day_name.') - '.$end_date_formated.' ('.$end_day_name.') ('.$diff.\Str::plural(__('lang_v1.day'), $diff).')';
                     }
                 })
                 ->addColumn('employee', function ($row) {

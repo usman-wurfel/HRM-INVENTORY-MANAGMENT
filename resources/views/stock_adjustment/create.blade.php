@@ -23,7 +23,7 @@
 
         @component('components.widget', ['class' => 'box-solid'])
             <div class="row">
-                <div class="col-sm-3">
+                <div class="col-sm-4">
                     <div class="form-group">
                         {!! Form::label('location_id', __('purchase.business_location') . ':*') !!}
                         {!! Form::select('location_id', $business_locations, null, [
@@ -33,13 +33,13 @@
                         ]) !!}
                     </div>
                 </div>
-                <div class="col-sm-3">
+                <div class="col-sm-4">
                     <div class="form-group">
                         {!! Form::label('ref_no', __('purchase.ref_no') . ':') !!}
                         {!! Form::text('ref_no', null, ['class' => 'form-control']) !!}
                     </div>
                 </div>
-                <div class="col-sm-3">
+                <div class="col-sm-4">
                     <div class="form-group">
                         {!! Form::label('transaction_date', __('messages.date') . ':*') !!}
                         <div class="input-group">
@@ -50,17 +50,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-sm-3">
-                    <div class="form-group">
-                        {!! Form::label('adjustment_type', __('stock_adjustment.adjustment_type') . ':*') !!} @show_tooltip(__('tooltip.adjustment_type'))
-                        {!! Form::select(
-                            'adjustment_type',
-                            ['normal' => __('stock_adjustment.normal'), 'abnormal' => __('stock_adjustment.abnormal')],
-                            null,
-                            ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required'],
-                        ) !!}
-                    </div>
-                </div>
+                {{-- Adjustment type removed - default set to 'abnormal' in controller --}}
             </div>
         @endcomponent
 
