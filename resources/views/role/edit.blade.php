@@ -375,7 +375,6 @@
         </div>
         </div>
         <hr>
-        @if(in_array('purchases', $enabled_modules))
         <div class="row check_group">
         <div class="col-md-1">
           <h4>@lang( 'role.purchase' )</h4>
@@ -463,9 +462,7 @@
         </div>
         </div>
         <hr>
-        @endif
 
-        @if(in_array('stock_adjustment', $enabled_modules))
         <div class="row check_group">
         <div class="col-md-1">
           <h4>@lang( 'role.stock_adjustment' )</h4>
@@ -521,9 +518,7 @@
         </div>
         </div>
         <hr>
-        @endif
 
-        @if(in_array('stock_transfers', $enabled_modules))
           <div class="row check_group">
           <div class="col-md-1">
             <h4>@lang( 'role.stock_transfer' )</h4>
@@ -579,7 +574,6 @@
           </div>
           </div>
           <hr>
-        @endif
 
         @if(!empty($common_settings['enable_purchase_requisition']))
           <div class="row check_group">
@@ -1451,7 +1445,6 @@
             </div>
         </div>
         <div class="col-md-9">
-        @if(in_array('purchases', $enabled_modules) || in_array('add_sale', $enabled_modules) || in_array('pos_sale', $enabled_modules))
           <div class="col-md-12">
             <div class="checkbox">
               <label>
@@ -1460,7 +1453,6 @@
               </label>
             </div>
           </div>
-        @endif
           <div class="col-md-12">
             <div class="checkbox">
               <label>
@@ -1477,7 +1469,6 @@
               </label>
             </div>
           </div>
-          @if(in_array('expenses', $enabled_modules))
           <div class="col-md-12">
             <div class="checkbox">
               <label>
@@ -1486,7 +1477,6 @@
               </label>
             </div>
           </div>
-          @endif
           <div class="col-md-12">
             <div class="checkbox">
               <label>
@@ -1586,7 +1576,6 @@
           </div>
         </div>
         </div>
-        @if(in_array('expenses', $enabled_modules))
             <hr>
             <div class="row check_group">
                 <div class="col-md-1">
@@ -1642,7 +1631,6 @@
                   </div>
                 </div>
             </div>
-        @endif
         <hr>
         <div class="row">
         <div class="col-md-3">
