@@ -306,15 +306,16 @@ class PayrollController extends Controller
                     // }
                 }
 
-                //get loan deduction for employee
-                $loan = EssentialsLoan::where('business_id', $business_id)
+                //get loan deductions for employee - get ALL loans, not just first one
+                $loans = EssentialsLoan::where('business_id', $business_id)
                     ->where('user_id', $employee->id)
                     ->where('status', 'approved')
                     ->whereNotNull('monthly_deduction')
-                    ->first();
+                    ->get();
 
-                if ($loan) {
-                    $remaining_loan = $loan->loan_amount - $loan->total_deduction_paid;
+                // Add all loan deductions
+                foreach ($loans as $loan) {
+                    $remaining_loan = $loan->loan_amount - ($loan->total_deduction_paid ?? 0);
                     if ($remaining_loan > 0 && $loan->monthly_deduction > 0) {
                         // Add loan deduction (readonly)
                         $loan_deduction_amount = min($loan->monthly_deduction, $remaining_loan);
