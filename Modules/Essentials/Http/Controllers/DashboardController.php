@@ -100,7 +100,7 @@ class DashboardController extends Controller
             }
         }
 
-        // Get normal holidays
+        // Get normal holidays with location filtering
         $holidays_query = EssentialsHoliday::where(
             'essentials_holidays.business_id',
             $business_id
@@ -112,7 +112,7 @@ class DashboardController extends Controller
             ->with(['location']);
 
         $permitted_locations = auth()->user()->permitted_locations();
-        if ($permitted_locations != 'all') {
+        if ($permitted_locations != 'all' && !empty($permitted_locations)) {
             $holidays_query->where(function ($query) use ($permitted_locations) {
                 $query->whereIn('essentials_holidays.location_id', $permitted_locations)
                     ->orWhereNull('essentials_holidays.location_id');
@@ -120,13 +120,11 @@ class DashboardController extends Controller
         }
         $holidays = $holidays_query->get();
 
-        // Get consecutive holidays for this user
+        // Get consecutive holidays (weekly day off) - show ALL consecutive holidays to ALL users
+        // No user_id or location filtering - everyone sees all consecutive holidays
         $consecutive_holidays = EssentialsHoliday::where('essentials_holidays.business_id', $business_id)
             ->where('type', 'consecutive')
-            ->where(function($query) use ($user_id) {
-                $query->where('user_id', $user_id)
-                      ->orWhereNull('user_id');
-            })
+            ->with(['user'])
             ->get();
 
         $todays_holidays = [];
@@ -144,21 +142,44 @@ class DashboardController extends Controller
             }
         }
 
-        // Process consecutive holidays
+        // Process consecutive holidays - show only closest holiday to each user
+        $closest_consecutive_holiday = null;
+        $closest_date = null;
+        
         foreach ($consecutive_holidays as $holiday) {
             $holiday_dates = $this->getConsecutiveHolidayDates($holiday, $today->format('Y-m-d'), $one_month_from_today->format('Y-m-d'));
             
             foreach ($holiday_dates as $date) {
                 $holiday_date = \Carbon::parse($date);
-                $holiday_copy = clone $holiday;
-                $holiday_copy->start_date = $date;
-                $holiday_copy->end_date = $date;
                 
+                // Find closest holiday (today or next upcoming)
                 if ($today->format('Y-m-d') == $date) {
-                    $todays_holidays[] = $holiday_copy;
+                    // Today's holiday - highest priority
+                    $closest_consecutive_holiday = $holiday;
+                    $closest_date = $date;
+                    break 2; // Break both loops
                 } elseif ($today->lt($holiday_date) && $holiday_date->lte($one_month_from_today)) {
-                    $upcoming_holidays[] = $holiday_copy;
+                    // Upcoming holiday - check if it's closer than previous
+                    if ($closest_date === null || $holiday_date->lt(\Carbon::parse($closest_date))) {
+                        $closest_consecutive_holiday = $holiday;
+                        $closest_date = $date;
+                    }
                 }
+            }
+        }
+        
+        // Add closest consecutive holiday if found
+        if ($closest_consecutive_holiday && $closest_date) {
+            $holiday_copy = clone $closest_consecutive_holiday;
+            $holiday_copy->start_date = $closest_date;
+            $holiday_copy->end_date = $closest_date;
+            // Preserve user relationship
+            $holiday_copy->user = $closest_consecutive_holiday->user;
+            
+            if ($today->format('Y-m-d') == $closest_date) {
+                $todays_holidays[] = $holiday_copy;
+            } else {
+                $upcoming_holidays[] = $holiday_copy;
             }
         }
 

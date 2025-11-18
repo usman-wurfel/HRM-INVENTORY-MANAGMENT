@@ -20,7 +20,12 @@
                         $start_day_name = $start_date->format('l');
                     @endphp
                     <tr>
-                        <td>{{$holiday->name}}</td>
+                        <td>
+                            {{$holiday->name}}
+                            @if(!empty($holiday->user))
+                                <br><small class="text-muted">(@lang('essentials::lang.employee'): {{$holiday->user->user_full_name}})</small>
+                            @endif
+                        </td>
                         <td>{{@format_date($holiday->start_date)}} ({{ $start_day_name }}) ({{ $diff . ' ' . Str::plural(__('lang_v1.day'), $diff)}})</td>
                         <td>{{$holiday->location->name ?? __("lang_v1.all")}}</td>
                     </tr>
@@ -45,7 +50,12 @@
                         $start_day_name = $start_date->format('l');
                     @endphp
                     <tr>
-                        <td>{{$holiday->name}}</td>
+                        <td>
+                            {{$holiday->name}}
+                            @if(!empty($holiday->user))
+                                <br><small class="text-muted">(@lang('essentials::lang.employee'): {{$holiday->user->user_full_name}})</small>
+                            @endif
+                        </td>
                         <td>{{@format_date($holiday->start_date)}} ({{ $start_day_name }}) ({{ $diff . ' ' . Str::plural(__('lang_v1.day'), $diff)}})</td>
                         <td>{{$holiday->location->name ?? __("lang_v1.all")}}</td>
                     </tr>
