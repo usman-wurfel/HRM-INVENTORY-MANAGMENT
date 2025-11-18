@@ -195,7 +195,12 @@ class ReportController extends Controller
                 // Get actual paid amount for expenses
                 $paid_amount = \App\TransactionPayment::where('transaction_id', $transaction->id)
                     ->sum('amount');
-                $cash_out = $paid_amount > 0 ? $paid_amount : 0;
+                // For stock transfer expenses, show final_total even if unpaid
+                if (strpos($transaction->additional_notes ?? '', 'Stock Transfer') !== false) {
+                    $cash_out = $transaction->final_total;
+                } else {
+                    $cash_out = $paid_amount > 0 ? $paid_amount : 0;
+                }
                 $total_cash_out += $cash_out;
             } elseif ($transaction->type == 'expense_refund') {
                 // Expense refund is cash in

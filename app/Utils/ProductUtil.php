@@ -539,8 +539,12 @@ class ProductUtil extends Util
             'units.allow_decimal as unit_allow_decimal',
             'u.short_name as second_unit',
             'brands.name as brand',
-            DB::raw('(SELECT purchase_price_inc_tax FROM purchase_lines WHERE 
-                        variation_id=variations.id ORDER BY id DESC LIMIT 1) as last_purchased_price')
+            DB::raw('(SELECT pl.purchase_price_inc_tax FROM purchase_lines pl 
+                        JOIN transactions t ON pl.transaction_id = t.id 
+                        WHERE pl.variation_id=variations.id 
+                        AND t.location_id=' . (int)$location_id . ' 
+                        AND t.status="received" 
+                        ORDER BY pl.id DESC LIMIT 1) as last_purchased_price')
         )
         ->firstOrFail();
 
