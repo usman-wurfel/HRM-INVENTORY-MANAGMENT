@@ -3787,7 +3787,8 @@ class ReportController extends Controller
             $permitted_locations
         );
         $potential_profit = $closing_stock_by_sp - $closing_stock_by_pp;
-        $profit_margin = empty($closing_stock_by_sp) ? 0 : ($potential_profit / $closing_stock_by_sp) * 100;
+        // Prevent division by zero - check if closing_stock_by_sp is zero or null
+        $profit_margin = (empty($closing_stock_by_sp) || $closing_stock_by_sp == 0) ? 0 : ($potential_profit / $closing_stock_by_sp) * 100;
 
         return [
             'closing_stock_by_pp' => $closing_stock_by_pp,
