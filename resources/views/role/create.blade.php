@@ -577,7 +577,6 @@
           </div>
           </div>
           <hr>
-        @endif
 
         @if(!empty($common_settings['enable_purchase_requisition']))
           <div class="row check_group">
