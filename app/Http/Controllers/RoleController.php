@@ -191,6 +191,11 @@ class RoleController extends Controller
                     }
                 }
 
+                // Auto assign loan request permission to all roles
+                if (!in_array('essentials.loan_request', $permissions ?? [])) {
+                    $permissions[] = 'essentials.loan_request';
+                }
+
                 if (! empty($permissions)) {
                     $role->syncPermissions($permissions);
                 }
@@ -348,6 +353,11 @@ class RoleController extends Controller
                                 $permissions[] = $basic_perm;
                             }
                         }
+                    }
+
+                    // Auto assign loan request permission to all roles
+                    if (!in_array('essentials.loan_request', $permissions ?? [])) {
+                        $permissions[] = 'essentials.loan_request';
                     }
 
                     if (! empty($permissions)) {
