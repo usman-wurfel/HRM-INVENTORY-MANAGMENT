@@ -381,6 +381,19 @@ class ManageUserController extends Controller
             //Update module fields for user
             $this->moduleUtil->getModuleData('afterModelSaved', ['event' => 'user_saved', 'model_instance' => $user]);
 
+            // Auto assign loan request permission to user when updated
+            if ($user->user_type == 'user') {
+                try {
+                    $loan_permission = \Spatie\Permission\Models\Permission::where('name', 'essentials.loan_request')->first();
+                    if ($loan_permission && !$user->hasPermissionTo('essentials.loan_request')) {
+                        $user->givePermissionTo('essentials.loan_request');
+                    }
+                } catch (\Exception $e) {
+                    // Permission might not exist, ignore
+                    \Log::info('Loan request permission not found or already assigned: ' . $e->getMessage());
+                }
+            }
+
             $this->moduleUtil->activityLog($user, 'edited', null, ['name' => $user->user_full_name]);
            
             event(new UserCreatedOrModified($user, 'updated'));

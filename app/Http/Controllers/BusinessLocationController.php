@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Account;
+use App\Business;
 use App\BusinessLocation;
 use App\InvoiceLayout;
 use App\InvoiceScheme;
@@ -183,6 +184,26 @@ class BusinessLocationController extends Controller
             //Create a new permission related to the created location
             Permission::create(['name' => 'location.'.$location->id]);
 
+            // Auto assign default modules to business when new location is created
+            $business = Business::find($business_id);
+            if ($business) {
+                $enabled_modules = $business->enabled_modules ?? [];
+                $default_modules = ['purchases', 'add_sale', 'pos_sale', 'stock_transfers', 'stock_adjustment', 'expenses'];
+                
+                $needs_update = false;
+                foreach ($default_modules as $module) {
+                    if (!in_array($module, $enabled_modules)) {
+                        $enabled_modules[] = $module;
+                        $needs_update = true;
+                    }
+                }
+                
+                if ($needs_update) {
+                    $business->enabled_modules = $enabled_modules;
+                    $business->save();
+                }
+            }
+
             $output = ['success' => true,
                 'msg' => __('business.business_location_added_success'),
             ];
@@ -302,6 +323,26 @@ class BusinessLocationController extends Controller
             BusinessLocation::where('business_id', $business_id)
                             ->where('id', $id)
                             ->update($input);
+
+            // Auto assign default modules to business when location is updated
+            $business = Business::find($business_id);
+            if ($business) {
+                $enabled_modules = $business->enabled_modules ?? [];
+                $default_modules = ['purchases', 'add_sale', 'pos_sale', 'stock_transfers', 'stock_adjustment', 'expenses'];
+                
+                $needs_update = false;
+                foreach ($default_modules as $module) {
+                    if (!in_array($module, $enabled_modules)) {
+                        $enabled_modules[] = $module;
+                        $needs_update = true;
+                    }
+                }
+                
+                if ($needs_update) {
+                    $business->enabled_modules = $enabled_modules;
+                    $business->save();
+                }
+            }
 
             $output = ['success' => true,
                 'msg' => __('business.business_location_updated_success'),

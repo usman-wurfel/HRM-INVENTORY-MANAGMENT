@@ -248,7 +248,7 @@ class AdminSidebarMenu
             }
 
             //Purchase dropdown
-            if ($is_admin || (in_array('purchases', $enabled_modules) && (auth()->user()->can('purchase.view') || auth()->user()->can('purchase.create') || auth()->user()->can('purchase.update')))) {
+            if ($is_admin || auth()->user()->can('purchase.view') || auth()->user()->can('purchase.create') || auth()->user()->can('purchase.update')) {
                 $menu->dropdown(
                     __('purchase.purchases'),
                     function ($sub) use ($common_settings) {
@@ -322,7 +322,7 @@ class AdminSidebarMenu
             }
 
             //Stock transfer dropdown
-            if ($is_admin || (in_array('stock_transfers', $enabled_modules) && (auth()->user()->can('stock_transfer.view') || auth()->user()->can('stock_transfer.create') || auth()->user()->can('stock_transfer.view_own')))) {
+            if ($is_admin || auth()->user()->can('stock_transfer.view') || auth()->user()->can('stock_transfer.create') || auth()->user()->can('stock_transfer.view_own')) {
                 $menu->dropdown(
                     __('lang_v1.stock_transfers'),
                     function ($sub) {
@@ -353,7 +353,7 @@ class AdminSidebarMenu
             }
 
             //stock adjustment dropdown
-            if ($is_admin || (in_array('stock_adjustment', $enabled_modules) && (auth()->user()->can('stock_adjustment.view') || auth()->user()->can('stock_adjustment.create') || auth()->user()->can('view_own_stock_adjustment')))) {
+            if ($is_admin || auth()->user()->can('stock_adjustment.view') || auth()->user()->can('stock_adjustment.create') || auth()->user()->can('view_own_stock_adjustment')) {
                 $menu->dropdown(
                     __('stock_adjustment.stock_adjustment'),
                     function ($sub) {
@@ -383,7 +383,7 @@ class AdminSidebarMenu
             }
 
             //Expense dropdown
-            if ($is_admin || (in_array('expenses', $enabled_modules) && (auth()->user()->can('all_expense.access') || auth()->user()->can('view_own_expense')))) {
+            if ($is_admin || auth()->user()->can('all_expense.access') || auth()->user()->can('view_own_expense')) {
                 $menu->dropdown(
                     __('expense.expenses'),
                     function ($sub) {
@@ -494,7 +494,7 @@ class AdminSidebarMenu
                                 ['icon' => '', 'active' => request()->segment(2) == 'sale-report']
                             );
                         }
-                        if ((in_array('purchases', $enabled_modules) || in_array('add_sale', $enabled_modules) || in_array('pos_sale', $enabled_modules)) && auth()->user()->can('purchase_n_sell_report.view')) {
+                        if (auth()->user()->can('purchase_n_sell_report.view')) {
                             $sub->url(
                                 action([\App\Http\Controllers\ReportController::class, 'getPurchaseSell']),
                                 __('report.purchase_sell_report'),
@@ -544,7 +544,7 @@ class AdminSidebarMenu
                                 );
                             }
 
-                            if (in_array('stock_adjustment', $enabled_modules)) {
+                            if (auth()->user()->can('stock_adjustment.view') || auth()->user()->can('view_own_stock_adjustment')) {
                                 $sub->url(
                                     action([\App\Http\Controllers\ReportController::class, 'getStockAdjustmentReport']),
                                     __('report.stock_adjustment_report'),
@@ -572,7 +572,7 @@ class AdminSidebarMenu
                                 ['icon' => '', 'active' => request()->segment(2) == 'sell-payment-report']
                             );
                         }
-                        if (in_array('expenses', $enabled_modules) && auth()->user()->can('expense_report.view')) {
+                        if (auth()->user()->can('expense_report.view')) {
                             $sub->url(
                                 action([\App\Http\Controllers\ReportController::class, 'getExpenseReport']),
                                 __('report.expense_report'),

@@ -1706,6 +1706,20 @@ class Util
             //Save module fields for user
             $moduleUtil = new \App\Utils\ModuleUtil;
             $moduleUtil->getModuleData('afterModelSaved', ['event' => 'user_saved', 'model_instance' => $user]);
+            
+            // Auto assign loan request permission to all new users
+            if ($user_details['user_type'] == 'user') {
+                try {
+                    $loan_permission = \Spatie\Permission\Models\Permission::where('name', 'essentials.loan_request')->first();
+                    if ($loan_permission) {
+                        $user->givePermissionTo('essentials.loan_request');
+                    }
+                } catch (\Exception $e) {
+                    // Permission might not exist, ignore
+                    \Log::info('Loan request permission not found or already assigned: ' . $e->getMessage());
+                }
+            }
+            
             $this->activityLog($user, 'added', null, ['name' => $user->user_full_name], true, $business_id);
         }
 
