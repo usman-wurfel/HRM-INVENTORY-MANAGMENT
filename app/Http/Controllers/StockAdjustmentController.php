@@ -405,6 +405,32 @@ class StockAdjustmentController extends Controller
             $business_id = $request->session()->get('user.business_id');
             $product = $this->productUtil->getDetailsFromVariation($variation_id, $business_id, $location_id);
             $product->formatted_qty_available = $this->productUtil->num_f($product->qty_available);
+            
+            // Get variation to access dpp_inc_tax (same as purchase entry row)
+            $variation = \App\Variation::find($variation_id);
+            
+            // Get last purchase line (EXACT same logic as purchase entry row - PurchaseController::getLastPurchaseLine)
+            $last_purchase_line = PurchaseLine::join('transactions as t', 'purchase_lines.transaction_id', '=', 't.id')
+                ->where('t.location_id', $location_id)
+                ->where('t.type', 'purchase')
+                ->where('t.status', 'received')
+                ->where('purchase_lines.variation_id', $variation_id)
+                ->orderBy('t.transaction_date', 'desc')
+                ->select('purchase_lines.*')
+                ->first();
+            
+            // Use purchase price from last purchase line if available (same as purchase entry row)
+            // Purchase entry row uses variation->dpp_inc_tax initially, but we use last purchase line price
+            if ($last_purchase_line && $last_purchase_line->purchase_price_inc_tax > 0) {
+                $product->last_purchased_price = $last_purchase_line->purchase_price_inc_tax;
+            } elseif ($variation && $variation->dpp_inc_tax > 0) {
+                // Fallback to variation dpp_inc_tax (same as purchase entry row)
+                $product->last_purchased_price = $variation->dpp_inc_tax;
+            } elseif ($variation && $variation->default_purchase_price > 0) {
+                // Final fallback to default_purchase_price
+                $product->last_purchased_price = $variation->default_purchase_price;
+            }
+            
             $type = ! empty($request->input('type')) ? $request->input('type') : 'stock_adjustment';
 
             //Get lot number dropdown if enabled
