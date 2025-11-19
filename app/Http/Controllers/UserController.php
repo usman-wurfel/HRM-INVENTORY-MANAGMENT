@@ -43,7 +43,26 @@ class UserController extends Controller
     public function getProfile()
     {
         $user_id = request()->session()->get('user.id');
-        $user = User::where('id', $user_id)->with(['media', 'documents'])->first();
+        $business_id = request()->session()->get('user.business_id');
+        
+        // Load user with documents relationship - ensure fresh data
+        // Also load documentsAndnote (Documents & Notes tab) with media
+        $user = User::where('id', $user_id)
+                    ->with(['media', 'documents' => function($query) {
+                        $query->orderBy('created_at', 'desc');
+                    }, 'documentsAndnote' => function($query) use ($business_id, $user_id) {
+                        $query->where('business_id', $business_id)
+                              ->where(function ($q) use ($user_id) {
+                                  $q->where('is_private', 0)
+                                    ->orWhere(function ($subQ) use ($user_id) {
+                                        $subQ->where('is_private', 1)
+                                             ->where('created_by', $user_id);
+                                    });
+                              })
+                              ->with(['media', 'createdBy'])
+                              ->orderBy('created_at', 'desc');
+                    }])
+                    ->first();
         $config_languages = config('constants.langs');
         $languages = [];
         foreach ($config_languages as $key => $value) {

@@ -187,7 +187,9 @@ class ManageUserController extends Controller
         $business_id = request()->session()->get('user.business_id');
 
         $user = User::where('business_id', $business_id)
-                    ->with(['contactAccess', 'documents'])
+                    ->with(['contactAccess', 'documents' => function($query) {
+                        $query->orderBy('created_at', 'desc');
+                    }])
                     ->find($id);
 
         //Get user view part from modules
@@ -217,7 +219,9 @@ class ManageUserController extends Controller
 
         $business_id = request()->session()->get('user.business_id');
         $user = User::where('business_id', $business_id)
-                    ->with(['contactAccess', 'documents'])
+                    ->with(['contactAccess', 'documents' => function($query) {
+                        $query->orderBy('created_at', 'desc');
+                    }])
                     ->findOrFail($id);
 
         $roles = $this->getRolesArray($business_id);

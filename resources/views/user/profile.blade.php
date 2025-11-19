@@ -141,41 +141,44 @@
 </div>
 {!! Form::close() !!}
 
-@if(isset($user->documents) && $user->documents->count() > 0)
+@if(!empty($user) && $user->documentsAndnote && $user->documentsAndnote->count() > 0)
 <div class="row mt-3">
   <div class="col-md-12">
     <div class="box box-solid">
       <div class="box-header">
-        <h3 class="box-title">@lang('lang_v1.employee_documents')</h3>
+        <h3 class="box-title">@lang('lang_v1.documents_and_notes')</h3>
       </div>
       <div class="box-body">
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>@lang('lang_v1.document_name')</th>
-              <th>@lang('lang_v1.file_name')</th>
-              <th>@lang('lang_v1.uploaded_at')</th>
-              <th>@lang('messages.action')</th>
-            </tr>
-          </thead>
-          <tbody>
-            @foreach($user->documents as $document)
-              <tr>
-                <td>{{ $document->document_name }}</td>
-                <td>{{ $document->file_name }}</td>
-                <td>{{ @format_datetime($document->created_at) }}</td>
-                <td>
-                  <a href="{{ action([\App\Http\Controllers\ManageUserController::class, 'downloadDocument'], [$document->id]) }}" class="btn btn-xs btn-info" target="_blank">
-                    <i class="fa fa-download"></i> @lang('messages.download')
-                  </a>
-                  <a href="{{ action([\App\Http\Controllers\ManageUserController::class, 'viewDocument'], [$document->id]) }}" class="btn btn-xs btn-primary" target="_blank">
-                    <i class="fa fa-eye"></i> @lang('messages.view')
-                  </a>
-                </td>
-              </tr>
-            @endforeach
-          </tbody>
-        </table>
+        @foreach($user->documentsAndnote as $document_note)
+          <div class="row mb-3" style="border-bottom: 1px solid #ddd; padding-bottom: 15px;">
+            <div class="col-md-12">
+              @if(!empty($document_note->heading))
+                <h4>{{ $document_note->heading }}</h4>
+              @endif
+              @if(!empty($document_note->description))
+                <p>{!! $document_note->description !!}</p>
+              @endif
+              
+              @if($document_note->media && $document_note->media->count() > 0)
+                <div class="mt-2">
+                  <strong>@lang('lang_v1.documents'):</strong><br>
+                  @foreach($document_note->media as $media)
+                    <a href="{{ $media->display_url }}" download="{{ $media->display_name }}" class="btn btn-xs btn-info" target="_blank">
+                      <i class="fa fa-download"></i> {{ $media->display_name }}
+                    </a>
+                    <br>
+                  @endforeach
+                </div>
+              @endif
+              
+              <small class="text-muted">
+                <i class="fa fa-user"></i> {{ $document_note->createdBy->user_full_name ?? '' }}
+                &nbsp;|&nbsp;
+                <i class="fa fa-calendar"></i> {{ @format_datetime($document_note->created_at) }}
+              </small>
+            </div>
+          </div>
+        @endforeach
       </div>
     </div>
   </div>

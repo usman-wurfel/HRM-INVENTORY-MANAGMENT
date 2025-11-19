@@ -123,7 +123,7 @@
                             </div>
                             @include('user.show_details')
                             
-                            @if(isset($user->documents) && $user->documents->count() > 0)
+                            @if(!empty($user) && $user->documents && $user->documents->count() > 0)
                               <div class="row mt-3">
                                 <div class="col-md-12">
                                   <h4>@lang('lang_v1.employee_documents')</h4>
