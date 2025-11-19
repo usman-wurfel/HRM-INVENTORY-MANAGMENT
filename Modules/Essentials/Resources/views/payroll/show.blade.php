@@ -13,15 +13,13 @@
 		      	<table class="table table-bordered" id="payroll-view">
 		      		<tr>
 		      			<td colspan="3">
-			                <div class="pull-right text-center">
-			                	<strong class="font-23">
-			                		{{Session::get('business.name') ?? ''}}
-			                	</strong>
-			                	<br>
-			                	{!!Session::get('business.business_address') ?? ''!!}
+						  <br>
+			                <div style="text-align: center;">
+			                	<strong style="font-size: 18px;">{{Session::get('business.name') ?? ''}}</strong>
 			                </div>
-			                <br>
-			                <div style="text-align: center;padding-top: 40px;">
+							 
+			               
+			                <div style="text-align: center;padding-top: 10px;">
 			                	@lang('essentials::lang.payslip_for_the_month', ['month' => $month_name, 'year' => $year])
 			                </div>
 		                </td>
