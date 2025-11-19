@@ -163,7 +163,14 @@
                 <div class="mt-2">
                   <strong>@lang('lang_v1.documents'):</strong><br>
                   @foreach($document_note->media as $media)
-                    <a href="{{ $media->display_url }}" download="{{ $media->display_name }}" class="btn btn-xs btn-info" target="_blank">
+                    @php
+                      // Extract original file name with extension from file_name
+                      // File name format: time_random_originalname.ext
+                      $file_name_parts = explode('_', $media->file_name, 3);
+                      // Original file name is the last part (after second underscore) which includes extension
+                      $download_name = !empty($file_name_parts[2]) ? $file_name_parts[2] : $media->display_name;
+                    @endphp
+                    <a href="{{ $media->display_url }}" download="{{ $download_name }}" class="btn btn-xs btn-info" target="_blank">
                       <i class="fa fa-download"></i> {{ $media->display_name }}
                     </a>
                     <br>
