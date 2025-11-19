@@ -1260,11 +1260,11 @@ class PayrollController extends Controller
         $query = User::where('business_id', $business_id)
                     ->user();
 
-        if (! empty($location_id)) {
+        // If location_id is "all" or empty/null, get all employees (don't filter by location)
+        if (! empty($location_id) && $location_id != 'all') {
             $query->where('location_id', $location_id);
-        } else {
-            $query->whereNull('location_id');
         }
+        // If location_id is null/empty/"all", don't add location filter - get all employees
 
         $users = $query->select('id', DB::raw("CONCAT(COALESCE(surname, ''),' ',COALESCE(first_name, ''),' ',COALESCE(last_name,'')) as full_name"))->get();
 
