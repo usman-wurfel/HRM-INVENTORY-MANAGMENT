@@ -1786,6 +1786,12 @@ class Util
 
         //Include location permissions
         if (empty($permissions) && ! empty($location_permissions)) {
+            // When specific locations are selected, ALWAYS revoke 'access_all_locations' first
+            // Location permissions should be assigned directly to user, not from role
+            if ($user->hasPermissionTo('access_all_locations')) {
+                $user->revokePermissionTo('access_all_locations');
+            }
+            
             $permissions = [];
             foreach ($location_permissions as $location_permission) {
                 $permissions[] = $location_permission;

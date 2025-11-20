@@ -155,9 +155,18 @@ class RoleController extends Controller
 
                 $this->__createPermissionIfNotExists($permissions);
 
-                // Auto assign access_all_locations permission if not already selected
-                if (!in_array('access_all_locations', $permissions ?? [])) {
-                    $permissions[] = 'access_all_locations';
+                // Remove access_all_locations from permissions if it exists
+                // Location permissions should be assigned to users directly, not through roles
+                if (in_array('access_all_locations', $permissions ?? [])) {
+                    $permissions = array_values(array_diff($permissions ?? [], ['access_all_locations']));
+                }
+                
+                // Remove all location.* permissions from role
+                // Location permissions should be assigned to users directly, not through roles
+                if (!empty($permissions)) {
+                    $permissions = array_filter($permissions, function($perm) {
+                        return strpos($perm, 'location.') !== 0;
+                    });
                 }
 
                 // Auto assign basic view permissions if not already selected
@@ -319,9 +328,18 @@ class RoleController extends Controller
 
                     $this->__createPermissionIfNotExists($permissions);
 
-                    // Auto assign access_all_locations permission if not already selected
-                    if (!in_array('access_all_locations', $permissions ?? [])) {
-                        $permissions[] = 'access_all_locations';
+                    // Remove access_all_locations from permissions if it exists
+                    // Location permissions should be assigned to users directly, not through roles
+                    if (in_array('access_all_locations', $permissions ?? [])) {
+                        $permissions = array_values(array_diff($permissions ?? [], ['access_all_locations']));
+                    }
+                    
+                    // Remove all location.* permissions from role
+                    // Location permissions should be assigned to users directly, not through roles
+                    if (!empty($permissions)) {
+                        $permissions = array_filter($permissions, function($perm) {
+                            return strpos($perm, 'location.') !== 0;
+                        });
                     }
 
                     // Auto assign basic view permissions if not already selected
