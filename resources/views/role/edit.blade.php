@@ -842,7 +842,6 @@
             </div>
         </div>
         <div class="col-md-9">
-          @if(in_array('add_sale', $enabled_modules))
           <div class="col-md-12">
             <div class="checkbox">
               <label>
@@ -915,7 +914,6 @@
               </label>
             </div>
           </div>
-          @endif
           <div class="col-md-12">
             <div class="checkbox">
               <label>
