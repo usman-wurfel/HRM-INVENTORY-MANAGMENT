@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
+use App\Utils\BusinessUtil;
 use Illuminate\Foundation\Auth\ResetsPasswords;
 use Illuminate\Http\Request;
 
@@ -23,11 +24,66 @@ class ResetPasswordController extends Controller
     use ResetsPasswords;
 
     /**
-     * Where to redirect users after resetting their password.
-     *
-     * @var string
+     * All Utils instance.
      */
-    protected $redirectTo = RouteServiceProvider::HOME;
+    protected $businessUtil;
+
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct(BusinessUtil $businessUtil)
+    {
+        $this->middleware('guest');
+        $this->businessUtil = $businessUtil;
+    }
+
+    /**
+     * Where to redirect users after resetting their password.
+     * Same logic as login - redirect to HRM dashboard if user has HRM permissions
+     *
+     * @return string
+     */
+    protected function redirectTo()
+    {
+        $user = \Auth::user();
+        
+        if (!$user) {
+            return '/home';
+        }
+        
+        // Check if user is not admin
+        $is_admin = $this->businessUtil->is_admin($user);
+     
+        if (!$is_admin) {
+            // Check if user has any HRM permission
+            $has_hrm_permission = $user->can('essentials.crud_leave_type') || 
+                                 $user->can('essentials.crud_all_leave') || 
+                                 $user->can('essentials.crud_own_leave') ||
+                                 $user->can('essentials.crud_all_attendance') || 
+                                 $user->can('essentials.view_own_attendance') ||
+                                 $user->can('essentials.access_sales_target') ||
+                                 $user->can('essentials.loan_request') ||
+                                 $user->can('essentials.loan_manage') ||
+                                 $user->can('essentials.crud_department') ||
+                                 $user->can('essentials.crud_designation');
+                              
+            if ($has_hrm_permission) {
+                return '/hrm/dashboard';
+            }
+        }
+        
+        if (!$user->can('dashboard.data') && $user->can('sell.create')) {
+            return '/pos/create';
+        }
+
+        if ($user->user_type == 'user_customer') {
+            return 'contact/contact-dashboard';
+        }
+
+        return '/home';
+    }
 
     /**
      * Display the password reset view for the given token.

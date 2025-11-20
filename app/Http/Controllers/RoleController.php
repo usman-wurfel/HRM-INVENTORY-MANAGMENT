@@ -169,41 +169,8 @@ class RoleController extends Controller
                     });
                 }
 
-                // Auto assign basic view permissions if not already selected
-                $basic_permissions = [
-                    'purchase.view',
-                    'stock_adjustment.view',
-                    'stock_transfer.view',
-                    'all_expense.access'
-                ];
-                
-                foreach ($basic_permissions as $basic_perm) {
-                    if (!in_array($basic_perm, $permissions ?? [])) {
-                        // Check if any related permission exists
-                        $has_related = false;
-                        if ($basic_perm == 'purchase.view' && (in_array('purchase.create', $permissions ?? []) || in_array('view_own_purchase', $permissions ?? []))) {
-                            $has_related = true;
-                        }
-                        if ($basic_perm == 'stock_adjustment.view' && (in_array('stock_adjustment.create', $permissions ?? []) || in_array('view_own_stock_adjustment', $permissions ?? []))) {
-                            $has_related = true;
-                        }
-                        if ($basic_perm == 'stock_transfer.view' && (in_array('stock_transfer.create', $permissions ?? []) || in_array('stock_transfer.view_own', $permissions ?? []))) {
-                            $has_related = true;
-                        }
-                        if ($basic_perm == 'all_expense.access' && in_array('view_own_expense', $permissions ?? [])) {
-                            $has_related = true;
-                        }
-                        
-                        if (!$has_related) {
-                            $permissions[] = $basic_perm;
-                        }
-                    }
-                }
-
-                // Auto assign loan request permission to all roles
-                if (!in_array('essentials.loan_request', $permissions ?? [])) {
-                    $permissions[] = 'essentials.loan_request';
-                }
+                // Don't auto-assign basic permissions - only use what user explicitly selects
+                // This allows users to unselect permissions like purchase.view, stock_adjustment.view, etc.
 
                 if (! empty($permissions)) {
                     $role->syncPermissions($permissions);
@@ -342,41 +309,8 @@ class RoleController extends Controller
                         });
                     }
 
-                    // Auto assign basic view permissions if not already selected
-                    $basic_permissions = [
-                        'purchase.view',
-                        'stock_adjustment.view',
-                        'stock_transfer.view',
-                        'all_expense.access'
-                    ];
-                    
-                    foreach ($basic_permissions as $basic_perm) {
-                        if (!in_array($basic_perm, $permissions ?? [])) {
-                            // Check if any related permission exists
-                            $has_related = false;
-                            if ($basic_perm == 'purchase.view' && (in_array('purchase.create', $permissions ?? []) || in_array('view_own_purchase', $permissions ?? []))) {
-                                $has_related = true;
-                            }
-                            if ($basic_perm == 'stock_adjustment.view' && (in_array('stock_adjustment.create', $permissions ?? []) || in_array('view_own_stock_adjustment', $permissions ?? []))) {
-                                $has_related = true;
-                            }
-                            if ($basic_perm == 'stock_transfer.view' && (in_array('stock_transfer.create', $permissions ?? []) || in_array('stock_transfer.view_own', $permissions ?? []))) {
-                                $has_related = true;
-                            }
-                            if ($basic_perm == 'all_expense.access' && in_array('view_own_expense', $permissions ?? [])) {
-                                $has_related = true;
-                            }
-                            
-                            if (!$has_related) {
-                                $permissions[] = $basic_perm;
-                            }
-                        }
-                    }
-
-                    // Auto assign loan request permission to all roles
-                    if (!in_array('essentials.loan_request', $permissions ?? [])) {
-                        $permissions[] = 'essentials.loan_request';
-                    }
+                    // Don't auto-assign basic permissions - only use what user explicitly selects
+                    // This allows users to unselect permissions like purchase.view, stock_adjustment.view, etc.
 
                     if (! empty($permissions)) {
                         $role->syncPermissions($permissions);
