@@ -920,7 +920,6 @@
             </div>
           </div>
           @endif
-          @if(in_array('pos_sale', $enabled_modules))
           <div class="col-md-12">
             <div class="checkbox">
               <label>
@@ -961,7 +960,6 @@
               </label>
             </div>
           </div>
-          @endif
           <div class="col-md-12">
             <div class="checkbox">
               <label>
