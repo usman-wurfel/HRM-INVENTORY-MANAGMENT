@@ -920,6 +920,48 @@
             </div>
           </div>
           @endif
+          @if(in_array('pos_sale', $enabled_modules))
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'sell.view', false, 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'role.sell.view' ) }}
+              </label>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'sell.create', false, 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'role.sell.create' ) }}
+              </label>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'sell.update', false, 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'role.sell.update' ) }}
+              </label>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'sell.delete', false, 
+                [ 'class' => 'input-icheck']); !!} {{ __( 'role.sell.delete' ) }}
+              </label>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'print_invoice', false, ['class' => 'input-icheck']); !!}
+                {{ __('lang_v1.print_invoice') }}
+              </label>
+            </div>
+          </div>
+          @endif
           <div class="col-md-12">
             <div class="checkbox">
               <label>

@@ -18,7 +18,6 @@
 			                	<strong style="font-size: 18px;">{{Session::get('business.name') ?? ''}}</strong>
 			                </div>
 							 
-			               
 			                <div style="text-align: center;padding-top: 10px;">
 			                	@lang('essentials::lang.payslip_for_the_month', ['month' => $month_name, 'year' => $year])
 			                </div>
