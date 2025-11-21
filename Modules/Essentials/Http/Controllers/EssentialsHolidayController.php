@@ -8,6 +8,7 @@ use App\Utils\ModuleUtil;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Modules\Essentials\Entities\EssentialsHoliday;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -110,7 +111,13 @@ class EssentialsHolidayController extends Controller
                 ->make(true);
         }
 
-        $locations = BusinessLocation::forDropdown($business_id);
+        // Get locations based on user's permitted locations
+        $permitted_locations = auth()->user()->permitted_locations();
+        if ($permitted_locations == 'all' || $is_admin) {
+            $locations = BusinessLocation::forDropdown($business_id, false, false, true, false);
+        } else {
+            $locations = BusinessLocation::forDropdown($business_id, false, false, true, true);
+        }
 
         return view('essentials::holiday.index')->with(compact('locations', 'can_manage_holiday', 'is_admin'));
     }
@@ -133,8 +140,37 @@ class EssentialsHolidayController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $locations = BusinessLocation::forDropdown($business_id);
-        $users = User::forDropdown($business_id, false);
+        // Get locations based on user's permitted locations
+        // If user has access_all_locations, show all locations, otherwise show only permitted locations
+        $permitted_locations = auth()->user()->permitted_locations();
+        if ($permitted_locations == 'all' || $is_admin) {
+            $locations = BusinessLocation::forDropdown($business_id, false, false, true, false);
+        } else {
+            $locations = BusinessLocation::forDropdown($business_id, false, false, true, true);
+        }
+        
+        // Get employees based on user's permitted locations
+        // If user has access_all_locations, show all employees, otherwise show only employees who have permissions for any of the permitted locations
+        if ($permitted_locations == 'all' || $is_admin) {
+            $users = User::forDropdown($business_id, false);
+        } else {
+            // Build location permission names (e.g., 'location.1', 'location.2')
+            $location_permissions = [];
+            foreach ($permitted_locations as $location_id) {
+                $location_permissions[] = 'location.'.$location_id;
+            }
+            
+            $users_query = User::where('business_id', $business_id)->user();
+            // Filter employees who have any of the permitted location permissions OR have location_id matching permitted locations
+            $users_query->where(function($query) use ($permitted_locations, $location_permissions) {
+                $query->whereIn('location_id', $permitted_locations)
+                      ->orWhereHas('permissions', function($q) use ($location_permissions) {
+                          $q->whereIn('permissions.name', $location_permissions);
+                      });
+            });
+            $all_users = $users_query->select('id', DB::raw("CONCAT(COALESCE(surname, ''),' ',COALESCE(first_name, ''),' ',COALESCE(last_name,'')) as full_name"))->get();
+            $users = $all_users->pluck('full_name', 'id');
+        }
 
         return view('essentials::holiday.create')->with(compact('locations', 'users'));
     }
@@ -163,6 +199,11 @@ class EssentialsHolidayController extends Controller
             
             // Get weekdays separately to handle value 0 (Sunday) properly
             $weekdays = $request->input('weekdays', []);
+            
+            // Handle location_id - if empty string, set to null
+            if (isset($input['location_id']) && $input['location_id'] === '') {
+                $input['location_id'] = null;
+            }
             
             $input['business_id'] = $business_id;
             $input['type'] = $input['type'] ?? 'normal';
@@ -209,9 +250,10 @@ class EssentialsHolidayController extends Controller
      *
      * @return Response
      */
-    public function show()
+    public function show($id)
     {
-        return view('essentials::show');
+        // Redirect to index as show view is not needed
+        return redirect()->action([\Modules\Essentials\Http\Controllers\EssentialsHolidayController::class, 'index']);
     }
 
     /**
@@ -235,8 +277,37 @@ class EssentialsHolidayController extends Controller
         $holiday = EssentialsHoliday::where('business_id', $business_id)
                                     ->findOrFail($id);
 
-        $locations = BusinessLocation::forDropdown($business_id);
-        $users = User::forDropdown($business_id, false);
+        // Get locations based on user's permitted locations
+        // If user has access_all_locations, show all locations, otherwise show only permitted locations
+        $permitted_locations = auth()->user()->permitted_locations();
+        if ($permitted_locations == 'all' || $is_admin) {
+            $locations = BusinessLocation::forDropdown($business_id, false, false, true, false);
+        } else {
+            $locations = BusinessLocation::forDropdown($business_id, false, false, true, true);
+        }
+        
+        // Get employees based on user's permitted locations
+        // If user has access_all_locations, show all employees, otherwise show only employees who have permissions for any of the permitted locations
+        if ($permitted_locations == 'all' || $is_admin) {
+            $users = User::forDropdown($business_id, false);
+        } else {
+            // Build location permission names (e.g., 'location.1', 'location.2')
+            $location_permissions = [];
+            foreach ($permitted_locations as $location_id) {
+                $location_permissions[] = 'location.'.$location_id;
+            }
+            
+            $users_query = User::where('business_id', $business_id)->user();
+            // Filter employees who have any of the permitted location permissions OR have location_id matching permitted locations
+            $users_query->where(function($query) use ($permitted_locations, $location_permissions) {
+                $query->whereIn('location_id', $permitted_locations)
+                      ->orWhereHas('permissions', function($q) use ($location_permissions) {
+                          $q->whereIn('permissions.name', $location_permissions);
+                      });
+            });
+            $all_users = $users_query->select('id', DB::raw("CONCAT(COALESCE(surname, ''),' ',COALESCE(first_name, ''),' ',COALESCE(last_name,'')) as full_name"))->get();
+            $users = $all_users->pluck('full_name', 'id');
+        }
         
         // Parse weekdays if exists - use isset to handle value "0" (Sunday)
         $holiday->weekdays_array = (isset($holiday->weekdays) && $holiday->weekdays !== '') ? explode(',', $holiday->weekdays) : [];
@@ -268,6 +339,11 @@ class EssentialsHolidayController extends Controller
 
             // Get weekdays separately to handle value 0 (Sunday) properly
             $weekdays = $request->input('weekdays', []);
+
+            // Handle location_id - if empty string, set to null
+            if (isset($input['location_id']) && $input['location_id'] === '') {
+                $input['location_id'] = null;
+            }
 
             $input['type'] = $input['type'] ?? 'normal';
 
@@ -345,5 +421,88 @@ class EssentialsHolidayController extends Controller
         }
 
         return $output;
+    }
+
+    /**
+     * Get employee locations based on user_id
+     */
+    public function getEmployeeLocations(Request $request)
+    {
+        $business_id = $request->session()->get('user.business_id');
+        $user_id = $request->input('user_id');
+
+        if (empty($user_id)) {
+            return response()->json([
+                'success' => false,
+                'locations' => [],
+                'location_id' => null,
+                'is_readonly' => false
+            ]);
+        }
+
+        try {
+            $user = User::where('business_id', $business_id)->findOrFail($user_id);
+            
+            // Get employee's locations from permissions
+            $employee_locations = [];
+            
+            // Check location_id column
+            if (!empty($user->location_id)) {
+                $employee_locations[] = $user->location_id;
+            }
+            
+            // Get locations from permissions (location.1, location.2, etc.)
+            $permissions = $user->permissions->pluck('name')->all();
+            foreach ($permissions as $permission) {
+                if (strpos($permission, 'location.') === 0) {
+                    $location_id = (int) str_replace('location.', '', $permission);
+                    if (!in_array($location_id, $employee_locations)) {
+                        $employee_locations[] = $location_id;
+                    }
+                }
+            }
+
+            // Filter by current user's permitted locations
+            $permitted_locations = auth()->user()->permitted_locations();
+            if ($permitted_locations != 'all') {
+                $employee_locations = array_intersect($employee_locations, $permitted_locations);
+            }
+
+            // Get location names
+            $locations = [];
+            if (!empty($employee_locations)) {
+                $locations = BusinessLocation::whereIn('id', $employee_locations)
+                    ->where('business_id', $business_id)
+                    ->select('id', DB::raw("IF(location_id IS NULL OR location_id='', name, CONCAT(name, ' (', location_id, ')')) AS name"))
+                    ->get()
+                    ->pluck('name', 'id')
+                    ->toArray();
+            }
+
+            $location_id = null;
+            $is_readonly = false;
+
+            // If only one location, auto-select and make readonly
+            if (count($employee_locations) == 1) {
+                $location_id = $employee_locations[0];
+                $is_readonly = true;
+            }
+
+            return response()->json([
+                'success' => true,
+                'locations' => $locations,
+                'location_id' => $location_id,
+                'is_readonly' => $is_readonly
+            ]);
+        } catch (\Exception $e) {
+            \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'locations' => [],
+                'location_id' => null,
+                'is_readonly' => false
+            ]);
+        }
     }
 }

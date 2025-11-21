@@ -21,10 +21,25 @@
                     @endphp
                     <tr>
                         <td>
-                            {{$holiday->name}}
-                            @if(!empty($holiday->user))
-                                <br><small class="text-muted">(@lang('essentials::lang.employee'): {{$holiday->user->user_full_name}})</small>
-                            @endif
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                @if(!empty($holiday->user))
+                                    @php
+                                        if(isset($holiday->user->media->display_url)) {
+                                            $img_src = $holiday->user->media->display_url;
+                                        } else {
+                                            $name = trim(($holiday->user->surname ?? '') . ' ' . ($holiday->user->first_name ?? ''));
+                                            $img_src = 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&size=40&background=random&color=fff&bold=true';
+                                        }
+                                    @endphp
+                                    <img src="{{$img_src}}" alt="{{$holiday->user->user_full_name}}" class="img-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                @endif
+                                <div>
+                                    <strong>{{$holiday->name}}</strong>
+                                    @if(!empty($holiday->user))
+                                        <br><small class="text-muted">{{$holiday->user->user_full_name}}</small>
+                                    @endif
+                                </div>
+                            </div>
                         </td>
                         <td>{{@format_date($holiday->start_date)}} ({{ $start_day_name }}) ({{ $diff . ' ' . Str::plural(__('lang_v1.day'), $diff)}})</td>
                         <td>{{$holiday->location->name ?? __("lang_v1.all")}}</td>
@@ -51,10 +66,25 @@
                     @endphp
                     <tr>
                         <td>
-                            {{$holiday->name}}
-                            @if(!empty($holiday->user))
-                                <br><small class="text-muted">(@lang('essentials::lang.employee'): {{$holiday->user->user_full_name}})</small>
-                            @endif
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                @if(!empty($holiday->user))
+                                    @php
+                                        if(isset($holiday->user->media->display_url)) {
+                                            $img_src = $holiday->user->media->display_url;
+                                        } else {
+                                            $name = trim(($holiday->user->surname ?? '') . ' ' . ($holiday->user->first_name ?? ''));
+                                            $img_src = 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&size=40&background=random&color=fff&bold=true';
+                                        }
+                                    @endphp
+                                    <img src="{{$img_src}}" alt="{{$holiday->user->user_full_name}}" class="img-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                @endif
+                                <div>
+                                    <strong>{{$holiday->name}}</strong>
+                                    @if(!empty($holiday->user))
+                                        <br><small class="text-muted">{{$holiday->user->user_full_name}}</small>
+                                    @endif
+                                </div>
+                            </div>
                         </td>
                         <td>{{@format_date($holiday->start_date)}} ({{ $start_day_name }}) ({{ $diff . ' ' . Str::plural(__('lang_v1.day'), $diff)}})</td>
                         <td>{{$holiday->location->name ?? __("lang_v1.all")}}</td>

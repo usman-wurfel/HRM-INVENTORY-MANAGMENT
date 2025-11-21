@@ -358,10 +358,7 @@ class EssentialsUtil extends Util
                         ]);
 
             if ($permitted_locations != 'all') {
-                $holidays->where(function ($query) use ($permitted_locations) {
-                    $query->whereIn('essentials_holidays.location_id', $permitted_locations)
-                        ->orWhereNull('essentials_holidays.location_id');
-                });
+                $holidays->whereIn('essentials_holidays.location_id', $permitted_locations);
             }
 
             if (! empty($location)) {

@@ -137,6 +137,13 @@
                     // Fix z-index for datepicker to show above modal
                     $('.datepicker').css('z-index', '9999');
                 });
+                
+                // If employee is already selected (edit form), trigger location fetch
+                setTimeout(function() {
+                    if ($('#consecutive_user_id').length && $('#consecutive_user_id').val()) {
+                        $('#consecutive_user_id').trigger('change');
+                    }
+                }, 200);
 
                 // Handle holiday type change
                 $('#holiday_type').on('change', function() {
@@ -153,6 +160,57 @@
                         $('#holiday_start_date').attr('required', 'required');
                         $('#holiday_end_date').attr('required', 'required');
                     }
+                });
+
+                // Handle employee change - auto-select location if single location
+                $(document).on('change', '#consecutive_user_id', function() {
+                    var userId = $(this).val();
+                    var $locationSelect = $('select[name="location_id"]');
+                    
+                    if (!userId) {
+                        // Reset location dropdown
+                        $locationSelect.val(null).trigger('change');
+                        $locationSelect.prop('disabled', false);
+                        $locationSelect.closest('.form-group').find('label').removeClass('text-muted');
+                        return;
+                    }
+                    
+                    // Get employee locations
+                    $.ajax({
+                        url: "{{ action([\Modules\Essentials\Http\Controllers\EssentialsHolidayController::class, 'getEmployeeLocations']) }}",
+                        method: 'GET',
+                        data: {
+                            user_id: userId
+                        },
+                        dataType: 'json',
+                        success: function(response) {
+                            if (response.success) {
+                                // Update location dropdown options
+                                $locationSelect.empty();
+                                $locationSelect.append('<option value="">' + "{{ __('lang_v1.select_location') }}" + '</option>');
+                                
+                                $.each(response.locations, function(id, name) {
+                                    $locationSelect.append('<option value="' + id + '">' + name + '</option>');
+                                });
+                                
+                                // If single location, auto-select and make readonly
+                                if (response.is_readonly && response.location_id) {
+                                    $locationSelect.val(response.location_id).trigger('change');
+                                    $locationSelect.prop('disabled', true);
+                                    $locationSelect.closest('.form-group').find('label').addClass('text-muted');
+                                } else {
+                                    $locationSelect.prop('disabled', false);
+                                    $locationSelect.closest('.form-group').find('label').removeClass('text-muted');
+                                }
+                                
+                                // Reinitialize select2
+                                $locationSelect.select2('destroy').select2();
+                            }
+                        },
+                        error: function() {
+                            console.error('Error fetching employee locations');
+                        }
+                    });
                 });
 
                 // Handle repeat type change
@@ -286,6 +344,11 @@
                     if ($('#repeat_type').length && $('#repeat_type').val() == 'week') {
                         $('#repeat_type').trigger('change');
                     }
+                    
+                    // If employee is already selected (edit form), trigger location fetch
+                    if ($('#consecutive_user_id').length && $('#consecutive_user_id').val()) {
+                        $('#consecutive_user_id').trigger('change');
+                    }
                 }, 100);
             });
 
@@ -325,6 +388,26 @@
                     if (selectedWeekdays && selectedWeekdays.length > 0) {
                         data.weekdays = selectedWeekdays;
                     }
+                }
+                
+                // Explicitly get location_id from select2 to ensure it's properly sent
+                // This is important because disabled fields are not included in serializeArray
+                var locationSelect = $form.find('select[name="location_id"]');
+                if (locationSelect.length) {
+                    var isDisabled = locationSelect.prop('disabled');
+                    var locationId = '';
+                    
+                    // If field is disabled, temporarily enable it to get the value
+                    if (isDisabled) {
+                        locationSelect.prop('disabled', false);
+                        locationId = locationSelect.val() || '';
+                        locationSelect.prop('disabled', true);
+                    } else {
+                        locationId = locationSelect.val() || '';
+                    }
+                    
+                    // Always include location_id even if field is disabled
+                    data.location_id = locationId;
                 }
 
                 $.ajax({

@@ -101,6 +101,8 @@ class DashboardController extends Controller
         }
 
         // Get normal holidays with location filtering
+        $permitted_locations = auth()->user()->permitted_locations();
+        
         $holidays_query = EssentialsHoliday::where(
             'essentials_holidays.business_id',
             $business_id
@@ -109,9 +111,8 @@ class DashboardController extends Controller
             ->whereDate('end_date', '>=', $today->format('Y-m-d'))
             ->whereDate('start_date', '<=', $one_month_from_today->format('Y-m-d'))
             ->orderBy('start_date', 'asc')
-            ->with(['location']);
+            ->with(['location', 'user.media']);
 
-        $permitted_locations = auth()->user()->permitted_locations();
         if ($permitted_locations != 'all' && !empty($permitted_locations)) {
             $holidays_query->where(function ($query) use ($permitted_locations) {
                 $query->whereIn('essentials_holidays.location_id', $permitted_locations)
@@ -120,12 +121,42 @@ class DashboardController extends Controller
         }
         $holidays = $holidays_query->get();
 
-        // Get consecutive holidays (weekly day off) - show ALL consecutive holidays to ALL users
-        // No user_id or location filtering - everyone sees all consecutive holidays
-        $consecutive_holidays = EssentialsHoliday::where('essentials_holidays.business_id', $business_id)
+        // Get consecutive holidays with location filtering
+        $consecutive_holidays_query = EssentialsHoliday::where('essentials_holidays.business_id', $business_id)
             ->where('type', 'consecutive')
-            ->with(['user'])
-            ->get();
+            ->with(['user.media', 'location', 'user.permissions']);
+        
+        // Filter consecutive holidays by permitted locations
+        // Show holidays if: location_id is null OR matches permitted locations OR employee's location matches
+        if ($permitted_locations != 'all' && !empty($permitted_locations)) {
+            $consecutive_holidays_query->where(function ($query) use ($permitted_locations) {
+                // Holiday's location_id is null (show to all) OR matches permitted locations
+                $query->whereNull('essentials_holidays.location_id')
+                    ->orWhereIn('essentials_holidays.location_id', $permitted_locations)
+                    // OR if holiday has user_id, check if that user's location matches
+                    ->orWhere(function ($q) use ($permitted_locations) {
+                        $q->whereNotNull('essentials_holidays.user_id')
+                            ->whereHas('user', function ($userQ) use ($permitted_locations) {
+                                $userQ->where(function ($userQuery) use ($permitted_locations) {
+                                    // Check user's location_id column
+                                    $userQuery->whereIn('users.location_id', $permitted_locations)
+                                        // OR check user's location permissions
+                                        ->orWhereHas('permissions', function ($permQuery) use ($permitted_locations) {
+                                            $location_permissions = array_map(function($loc_id) {
+                                                return 'location.' . $loc_id;
+                                            }, $permitted_locations);
+                                            $permQuery->whereIn('permissions.name', $location_permissions);
+                                        });
+                                });
+                            });
+                    });
+            });
+        } else {
+            // If user has access to all locations, show all consecutive holidays
+            // No filtering needed
+        }
+        
+        $consecutive_holidays = $consecutive_holidays_query->get();
 
         $todays_holidays = [];
         $upcoming_holidays = [];
@@ -142,47 +173,48 @@ class DashboardController extends Controller
             }
         }
 
-        // Process consecutive holidays - show only closest holiday to each user
-        $closest_consecutive_holiday = null;
-        $closest_date = null;
-        
+        // Process consecutive holidays - show only closest holiday for each employee
         foreach ($consecutive_holidays as $holiday) {
             $holiday_dates = $this->getConsecutiveHolidayDates($holiday, $today->format('Y-m-d'), $one_month_from_today->format('Y-m-d'));
             
+            $closest_date = null;
+            $is_today = false;
+            
+            // Find closest date (today has priority, then next upcoming)
             foreach ($holiday_dates as $date) {
                 $holiday_date = \Carbon::parse($date);
                 
-                // Find closest holiday (today or next upcoming)
+                // Check if date is today or upcoming (within one month)
                 if ($today->format('Y-m-d') == $date) {
                     // Today's holiday - highest priority
-                    $closest_consecutive_holiday = $holiday;
                     $closest_date = $date;
-                    break 2; // Break both loops
-                } elseif ($today->lt($holiday_date) && $holiday_date->lte($one_month_from_today)) {
+                    $is_today = true;
+                    break; // Break as soon as we find today's date
+                } elseif ($holiday_date->gt($today) && $holiday_date->lte($one_month_from_today)) {
                     // Upcoming holiday - check if it's closer than previous
                     if ($closest_date === null || $holiday_date->lt(\Carbon::parse($closest_date))) {
-                        $closest_consecutive_holiday = $holiday;
                         $closest_date = $date;
+                        $is_today = false;
                     }
                 }
             }
-        }
-        
-        // Add closest consecutive holiday if found
-        if ($closest_consecutive_holiday && $closest_date) {
-            $holiday_copy = clone $closest_consecutive_holiday;
-            $holiday_copy->start_date = $closest_date;
-            $holiday_copy->end_date = $closest_date;
-            // Preserve user relationship
-            $holiday_copy->user = $closest_consecutive_holiday->user;
             
-            if ($today->format('Y-m-d') == $closest_date) {
-                $todays_holidays[] = $holiday_copy;
-            } else {
-                $upcoming_holidays[] = $holiday_copy;
+            // Add only the closest holiday if found
+            if ($closest_date !== null) {
+                $holiday_copy = clone $holiday;
+                $holiday_copy->start_date = $closest_date;
+                $holiday_copy->end_date = $closest_date;
+                // Preserve user and location relationships
+                $holiday_copy->user = $holiday->user;
+                $holiday_copy->location = $holiday->location;
+                
+                if ($is_today) {
+                    $todays_holidays[] = $holiday_copy;
+                } else {
+                    $upcoming_holidays[] = $holiday_copy;
+                }
             }
         }
-
         $todays_attendances = [];
         if ($is_admin) {
             $todays_attendances = EssentialsAttendance::where('business_id', $business_id)
@@ -234,10 +266,10 @@ class DashboardController extends Controller
     private function getConsecutiveHolidayDates($holiday, $start_date, $end_date)
     {
         $dates = [];
-        $current = \Carbon::parse($start_date);
-        $end = \Carbon::parse($end_date);
+        $current = \Carbon::parse($start_date)->startOfDay();
+        $end = \Carbon::parse($end_date)->endOfDay();
 
-        if ($holiday->repeat_type == 'week' && !empty($holiday->weekdays)) {
+        if ($holiday->repeat_type == 'week' && isset($holiday->weekdays) && $holiday->weekdays !== '') {
             $weekdays = array_map('intval', explode(',', $holiday->weekdays));
             $repeat_pattern = $holiday->repeat_pattern ?? 'every';
             $gap_weeks = (int)($holiday->gap_weeks ?? 1);

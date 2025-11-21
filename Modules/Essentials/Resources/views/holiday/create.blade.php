@@ -87,7 +87,7 @@
 
 	      	<div class="form-group col-md-12">
 	        	{!! Form::label('location_id', __( 'business.business_location' ) . ':') !!}
-	          	{!! Form::select('location_id', $locations, null, ['class' => 'form-control select2', 'placeholder' => __( 'lang_v1.all' ) ]); !!}
+	          	{!! Form::select('location_id', $locations, null, ['class' => 'form-control select2', 'placeholder' => __( 'lang_v1.select_location' ) ]); !!}
 	      	</div>
 
 	      	<div class="form-group col-md-12">
