@@ -299,7 +299,33 @@
                 var $form = $(this);
                 var $submitBtn = $form.find('button[type="submit"]');
                 $submitBtn.attr('disabled', true);
-                var data = $form.serialize();
+                
+                // Get form data using serializeArray to properly handle value 0 (Sunday)
+                var formArray = $form.serializeArray();
+                var data = {};
+                
+                // Build data object from form array
+                $.each(formArray, function(i, field) {
+                    if (field.name.indexOf('[]') !== -1) {
+                        // Handle array fields like weekdays[]
+                        var name = field.name.replace('[]', '');
+                        if (!data[name]) {
+                            data[name] = [];
+                        }
+                        data[name].push(field.value);
+                    } else {
+                        data[field.name] = field.value;
+                    }
+                });
+                
+                // Explicitly get weekdays from select2 to ensure value 0 (Sunday) is included
+                var weekdaysSelect = $form.find('#weekdays_select');
+                if (weekdaysSelect.length) {
+                    var selectedWeekdays = weekdaysSelect.val();
+                    if (selectedWeekdays && selectedWeekdays.length > 0) {
+                        data.weekdays = selectedWeekdays;
+                    }
+                }
 
                 $.ajax({
                     method: $form.attr('method'),

@@ -72,7 +72,7 @@ class EssentialsHolidayController extends Controller
                 ->editColumn('start_date', function ($row) {
                     if (!empty($row->type) && $row->type == 'consecutive') {
                         $repeat_info = '';
-                        if (!empty($row->repeat_type) && $row->repeat_type == 'week' && !empty($row->weekdays)) {
+                        if (!empty($row->repeat_type) && $row->repeat_type == 'week' && isset($row->weekdays) && $row->weekdays !== '') {
                             $weekdays = explode(',', $row->weekdays);
                             $day_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
                             $selected_days = array_map(function($day) use ($day_names) {
@@ -159,7 +159,10 @@ class EssentialsHolidayController extends Controller
         }
 
         try {
-            $input = $request->only(['name', 'type', 'start_date', 'end_date', 'location_id', 'note', 'user_id', 'weekdays', 'repeat_type', 'repeat_days', 'repeat_pattern', 'gap_weeks', 'custom_dates']);
+            $input = $request->only(['name', 'type', 'start_date', 'end_date', 'location_id', 'note', 'user_id', 'repeat_type', 'repeat_days', 'repeat_pattern', 'gap_weeks', 'custom_dates']);
+            
+            // Get weekdays separately to handle value 0 (Sunday) properly
+            $weekdays = $request->input('weekdays', []);
             
             $input['business_id'] = $business_id;
             $input['type'] = $input['type'] ?? 'normal';
@@ -169,8 +172,10 @@ class EssentialsHolidayController extends Controller
                 $input['end_date'] = $this->moduleUtil->uf_date($input['end_date']);
             } else {
                 // For consecutive holidays, weekdays or repeat_days will be used
-                if (!empty($input['weekdays']) && is_array($input['weekdays'])) {
-                    $input['weekdays'] = implode(',', $input['weekdays']);
+                if (is_array($weekdays) && count($weekdays) > 0) {
+                    $input['weekdays'] = implode(',', $weekdays);
+                } else {
+                    $input['weekdays'] = null;
                 }
                 // start_date and end_date not required for consecutive
                 $input['start_date'] = null;
@@ -233,8 +238,8 @@ class EssentialsHolidayController extends Controller
         $locations = BusinessLocation::forDropdown($business_id);
         $users = User::forDropdown($business_id, false);
         
-        // Parse weekdays if exists
-        $holiday->weekdays_array = !empty($holiday->weekdays) ? explode(',', $holiday->weekdays) : [];
+        // Parse weekdays if exists - use isset to handle value "0" (Sunday)
+        $holiday->weekdays_array = (isset($holiday->weekdays) && $holiday->weekdays !== '') ? explode(',', $holiday->weekdays) : [];
 
         return view('essentials::holiday.edit')->with(compact('locations', 'holiday', 'users'));
     }
@@ -259,7 +264,10 @@ class EssentialsHolidayController extends Controller
         }
 
         try {
-            $input = $request->only(['name', 'type', 'start_date', 'end_date', 'location_id', 'note', 'user_id', 'weekdays', 'repeat_type', 'repeat_days', 'repeat_pattern', 'gap_weeks', 'custom_dates']);
+            $input = $request->only(['name', 'type', 'start_date', 'end_date', 'location_id', 'note', 'user_id', 'repeat_type', 'repeat_days', 'repeat_pattern', 'gap_weeks', 'custom_dates']);
+
+            // Get weekdays separately to handle value 0 (Sunday) properly
+            $weekdays = $request->input('weekdays', []);
 
             $input['type'] = $input['type'] ?? 'normal';
 
@@ -268,8 +276,10 @@ class EssentialsHolidayController extends Controller
                 $input['end_date'] = $this->moduleUtil->uf_date($input['end_date']);
             } else {
                 // For consecutive holidays
-                if (!empty($input['weekdays']) && is_array($input['weekdays'])) {
-                    $input['weekdays'] = implode(',', $input['weekdays']);
+                if (is_array($weekdays) && count($weekdays) > 0) {
+                    $input['weekdays'] = implode(',', $weekdays);
+                } else {
+                    $input['weekdays'] = null;
                 }
                 $input['start_date'] = null;
                 $input['end_date'] = null;
