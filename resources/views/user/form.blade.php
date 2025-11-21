@@ -117,3 +117,8 @@
     @show_tooltip(__('lang_v1.tax_payer_id_help'))
     {!! Form::text('bank_details[tax_payer_id]', !empty($bank_details['tax_payer_id']) ? $bank_details['tax_payer_id'] : null, ['class' => 'form-control', 'id' => 'tax_payer_id', 'placeholder' => __( 'lang_v1.tax_payer_id') ]); !!}
 </div>
+<div class="form-group col-md-3">
+    {!! Form::label('social_security_number', __( 'lang_v1.social_security_number') . ':') !!}
+    @show_tooltip(__('lang_v1.social_security_number_help'))
+    {!! Form::text('bank_details[social_security_number]', !empty($bank_details['social_security_number']) ? $bank_details['social_security_number'] : null, ['class' => 'form-control', 'id' => 'social_security_number', 'placeholder' => __( 'lang_v1.social_security_number') ]); !!}
+</div>

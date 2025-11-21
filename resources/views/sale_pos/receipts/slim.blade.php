@@ -121,6 +121,37 @@
 				</div>
 			@endif
 
+			@if(!empty($receipt_details->employee_name))
+				<div class="textbox-info">
+					<p class="f-left"><strong>@lang('essentials::lang.employee')</strong></p>
+					<p class="f-right">{{$receipt_details->employee_name}}</p>
+				</div>
+				@if(!empty($receipt_details->employee_department))
+					<div class="textbox-info">
+						<p class="f-left"><strong>@lang('essentials::lang.department')</strong></p>
+						<p class="f-right">{{$receipt_details->employee_department}}</p>
+					</div>
+				@endif
+				@if(!empty($receipt_details->employee_designation))
+					<div class="textbox-info">
+						<p class="f-left"><strong>@lang('essentials::lang.designation')</strong></p>
+						<p class="f-right">{{$receipt_details->employee_designation}}</p>
+					</div>
+				@endif
+				@if(!empty($receipt_details->employee_location))
+					<div class="textbox-info">
+						<p class="f-left"><strong>@lang('lang_v1.primary_work_location')</strong></p>
+						<p class="f-right">{{$receipt_details->employee_location}}</p>
+					</div>
+				@endif
+				@if(!empty($receipt_details->employee_nif))
+					<div class="textbox-info">
+						<p class="f-left"><strong>@lang('lang_v1.tax_payer_id')</strong></p>
+						<p class="f-right">{{$receipt_details->employee_nif}}</p>
+					</div>
+				@endif
+			@endif
+
 			@if(!empty($receipt_details->brand_label) || !empty($receipt_details->repair_brand))
 				<div class="textbox-info">
 					<p class="f-left"><strong>{{$receipt_details->brand_label}}</strong></p>

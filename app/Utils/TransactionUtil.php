@@ -1239,6 +1239,54 @@ class TransactionUtil extends Util
         if ($il->show_commission_agent == 1) {
             $output['commission_agent_label'] = ! empty($il->commission_agent_label) ? $il->commission_agent_label : '';
             $output['commission_agent'] = ! empty($transaction->sale_commission_agent->user_full_name) ? $transaction->sale_commission_agent->user_full_name : '';
+            
+            // Add employee details if commission agent exists
+            if (!empty($transaction->sale_commission_agent)) {
+                $employee = $transaction->sale_commission_agent;
+                $output['employee_name'] = $employee->user_full_name;
+                
+                // Get department
+                if (!empty($employee->essentials_department_id)) {
+                    $department = \App\Category::where('category_type', 'hrm_department')
+                        ->find($employee->essentials_department_id);
+                    $output['employee_department'] = $department->name ?? '';
+                } else {
+                    $output['employee_department'] = '';
+                }
+                
+                // Get designation
+                if (!empty($employee->essentials_designation_id)) {
+                    $designation = \App\Category::where('category_type', 'hrm_designation')
+                        ->find($employee->essentials_designation_id);
+                    $output['employee_designation'] = $designation->name ?? '';
+                } else {
+                    $output['employee_designation'] = '';
+                }
+                
+                // Get primary work location
+                if (!empty($employee->location_id)) {
+                    $location = \App\BusinessLocation::find($employee->location_id);
+                    $output['employee_location'] = $location->name ?? '';
+                } else {
+                    $output['employee_location'] = '';
+                }
+                
+                // Get NIF (Tax Payer ID)
+                $bank_details = !empty($employee->bank_details) ? json_decode($employee->bank_details, true) : [];
+                $output['employee_nif'] = $bank_details['tax_payer_id'] ?? '';
+            } else {
+                $output['employee_name'] = '';
+                $output['employee_department'] = '';
+                $output['employee_designation'] = '';
+                $output['employee_location'] = '';
+                $output['employee_nif'] = '';
+            }
+        } else {
+            $output['employee_name'] = '';
+            $output['employee_department'] = '';
+            $output['employee_designation'] = '';
+            $output['employee_location'] = '';
+            $output['employee_nif'] = '';
         }
 
         //Invoice info

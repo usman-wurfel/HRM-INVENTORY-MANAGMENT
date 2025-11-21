@@ -197,6 +197,23 @@
                                 {{ $receipt_details->commission_agent }}
                             @endif
 
+                            @if (!empty($receipt_details->employee_name))
+                                <br />
+                                <strong>@lang('essentials::lang.employee'):</strong> {{ $receipt_details->employee_name }}
+                                @if(!empty($receipt_details->employee_department))
+                                    <br/><strong>@lang('essentials::lang.department'):</strong> {{ $receipt_details->employee_department }}
+                                @endif
+                                @if(!empty($receipt_details->employee_designation))
+                                    <br/><strong>@lang('essentials::lang.designation'):</strong> {{ $receipt_details->employee_designation }}
+                                @endif
+                                @if(!empty($receipt_details->employee_location))
+                                    <br/><strong>@lang('lang_v1.primary_work_location'):</strong> {{ $receipt_details->employee_location }}
+                                @endif
+                                @if(!empty($receipt_details->employee_nif))
+                                    <br/><strong>@lang('lang_v1.tax_payer_id'):</strong> {{ $receipt_details->employee_nif }}
+                                @endif
+                            @endif
+
                             @if (!empty($receipt_details->customer_rp_label))
                                 <br />
                                 <strong>{{ $receipt_details->customer_rp_label }}</strong>

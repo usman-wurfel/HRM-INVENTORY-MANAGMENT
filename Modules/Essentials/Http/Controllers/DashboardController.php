@@ -215,6 +215,16 @@ class DashboardController extends Controller
                 }
             }
         }
+        
+        // Sort holidays by date
+        usort($todays_holidays, function($a, $b) {
+            return \Carbon::parse($a->start_date)->timestamp - \Carbon::parse($b->start_date)->timestamp;
+        });
+        
+        usort($upcoming_holidays, function($a, $b) {
+            return \Carbon::parse($a->start_date)->timestamp - \Carbon::parse($b->start_date)->timestamp;
+        });
+        
         $todays_attendances = [];
         if ($is_admin) {
             $todays_attendances = EssentialsAttendance::where('business_id', $business_id)
