@@ -7,7 +7,7 @@
       <div class="">
         <style>
             .holidays-scroll-container {
-                max-height: 150px;
+                max-height: 80px;
                 overflow-y: auto;
                 overflow-x: hidden;
             }

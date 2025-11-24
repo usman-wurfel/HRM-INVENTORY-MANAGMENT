@@ -330,7 +330,7 @@ aside.side-bar a.tw-bg-gray-200.tw-text-primary-700 {
     min-height: 300px;
     height: 300px; }
     .row-custom .col-custom .widget-content-scroll {
-      max-height: 240px;
+      max-height: 80px;
       overflow-y: auto;
       overflow-x: hidden;
     }
