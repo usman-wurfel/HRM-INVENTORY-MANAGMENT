@@ -570,17 +570,6 @@ class DataController extends Controller
         if (in_array('holiday', $data['events'])) {
             $holidays_query = EssentialsHoliday::where('business_id', $data['business_id']);
 
-            if (! empty($data['user_id'])) {
-                $user = User::where('business_id', $data['business_id'])->find($data['user_id']);
-                $permitted_locations = $user->permitted_locations();
-                if ($permitted_locations != 'all') {
-                    $holidays_query->where(function ($query) use ($permitted_locations) {
-                        $query->whereIn('location_id', $permitted_locations)
-                            ->orWhereNull('location_id');
-                    });
-                }
-            }
-
             if (! empty($data['location_id'])) {
                 $holidays_query->where('location_id', $data['location_id']);
             }
