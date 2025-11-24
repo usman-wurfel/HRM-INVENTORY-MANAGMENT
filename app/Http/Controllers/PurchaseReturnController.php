@@ -217,8 +217,12 @@ class PurchaseReturnController extends Controller
             $purchase->purchase_lines[$key]->formatted_qty_available = $this->transactionUtil->num_f($qty_available);
         }
 
+        $taxes = \App\TaxRate::where('business_id', $business_id)
+                        ->ExcludeForTaxGroup()
+                        ->get();
+
         return view('purchase_return.add')
-                    ->with(compact('purchase'));
+                    ->with(compact('purchase', 'taxes'));
     }
 
     /**
@@ -242,7 +246,9 @@ class PurchaseReturnController extends Controller
                         ->findOrFail($request->input('transaction_id'));
 
             $return_quantities = $request->input('returns');
+            $return_taxes = $request->input('return_tax', []);
             $return_total = 0;
+            $total_tax = 0;
 
             DB::beginTransaction();
 
@@ -258,8 +264,26 @@ class PurchaseReturnController extends Controller
                 }
 
                 $purchase_line->quantity_returned = $return_quantity;
+                
+                // Update tax_id if provided for this line
+                if (!empty($return_taxes[$purchase_line->id])) {
+                    $purchase_line->tax_id = $return_taxes[$purchase_line->id];
+                }
+                
                 $purchase_line->save();
-                $return_total += $purchase_line->purchase_price_inc_tax * $purchase_line->quantity_returned;
+                
+                // Calculate line total and tax
+                $line_total = $purchase_line->purchase_price_inc_tax * $purchase_line->quantity_returned;
+                $return_total += $line_total;
+                
+                // Calculate tax for this line if tax_id is set
+                if (!empty($purchase_line->tax_id)) {
+                    $tax_rate = \App\TaxRate::find($purchase_line->tax_id);
+                    if ($tax_rate) {
+                        $line_tax = ($line_total * $tax_rate->amount) / 100;
+                        $total_tax += $line_tax;
+                    }
+                }
 
                 //Decrease quantity in variation location details
                 if ($old_return_qty != $purchase_line->quantity_returned) {
@@ -272,13 +296,13 @@ class PurchaseReturnController extends Controller
                     );
                 }
             }
-            $return_total_inc_tax = $return_total + $request->input('tax_amount');
+            $return_total_inc_tax = $return_total + $total_tax;
 
             $return_transaction_data = [
                 'total_before_tax' => $return_total,
                 'final_total' => $return_total_inc_tax,
-                'tax_amount' => $request->input('tax_amount'),
-                'tax_id' => $purchase->tax_id,
+                'tax_amount' => $total_tax,
+                'tax_id' => null, // No single tax_id as each line has its own tax
             ];
 
             if (empty($request->input('ref_no'))) {

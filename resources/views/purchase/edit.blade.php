@@ -26,8 +26,8 @@
   <!-- Hidden fields for removed form elements -->
   {!! Form::hidden('discount_type', $purchase->discount_type ?? '') !!}
   {!! Form::hidden('discount_amount', $purchase->discount_amount ?? 0) !!}
-  {!! Form::hidden('tax_id', $purchase->tax_id ?? '') !!}
-  {!! Form::hidden('tax_amount', $purchase->tax_amount ?? 0) !!}
+  {!! Form::hidden('tax_id', null) !!}
+  {!! Form::hidden('tax_amount', 0) !!}
   {!! Form::hidden('shipping_charges', $purchase->shipping_charges ?? 0) !!}
   {!! Form::hidden('shipping_details', $purchase->shipping_details ?? '') !!}
 

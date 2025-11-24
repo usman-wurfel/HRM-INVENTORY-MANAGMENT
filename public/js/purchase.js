@@ -963,6 +963,7 @@ function update_table_total() {
     var total_quantity = 0;
     var total_st_before_tax = 0;
     var total_subtotal = 0;
+    var total_tax = 0;
 
     $('#purchase_entry_table tbody')
         .find('tr')
@@ -973,6 +974,11 @@ function update_table_total() {
                 true
             );
             total_subtotal += __read_number($(this).find('.row_subtotal_after_tax_hidden'), true);
+            
+            // Calculate tax for this line
+            var line_tax = __read_number($(this).find('input.purchase_product_unit_tax'), true);
+            var quantity = __read_number($(this).find('.purchase_quantity'), true);
+            total_tax += line_tax * quantity;
         });
 
     $('#total_quantity').text(__number_f(total_quantity, false));
@@ -981,6 +987,9 @@ function update_table_total() {
 
     $('#total_subtotal').text(__currency_trans_from_en(total_subtotal, true, true));
     __write_number($('input#total_subtotal_input'), total_subtotal, true);
+    
+    $('#total_tax_amount').text(__currency_trans_from_en(total_tax, true, true));
+    __write_number($('input#total_tax_amount_input'), total_tax, true);
 }
 
 function update_grand_total() {
@@ -1023,10 +1032,23 @@ function update_grand_total() {
 
     __write_number($('input#grand_total_hidden'), grand_total, true);
 
+    // Automatically set payment amount to net amount (total_subtotal)
+    // Always update payment amount when total changes
+    if ($('input.payment-amount').length > 0) {
+        var current_payment = __read_number($('input.payment-amount'), true);
+        var previous_total = parseFloat($('input.payment-amount').data('previous_total')) || 0;
+        var is_manually_changed = $('input.payment-amount').data('manually_changed') || false;
+        
+        // Update if field is empty, zero, or if total has changed and user hasn't manually changed it
+        if (!is_manually_changed && (current_payment == 0 || current_payment == '' || Math.abs(current_payment - previous_total) < 0.01)) {
+            __write_number($('input.payment-amount'), total_subtotal, true);
+            $('input.payment-amount').data('previous_total', total_subtotal);
+        }
+    }
+
     var payment = __read_number($('input.payment-amount'), true);
 
     var due = grand_total - payment;
-    // __write_number($('input.payment-amount'), grand_total, true);
 
     if ($('#grand_total').length > 0) {
         $('#grand_total').text(__currency_trans_from_en(grand_total, true, true));
@@ -1039,6 +1061,9 @@ function update_grand_total() {
 $(document).on('change', 'input.payment-amount', function() {
     var payment = __read_number($(this), true);
     var grand_total = __read_number($('input#grand_total_hidden'), true);
+    // Mark as manually changed and store the payment amount
+    $(this).data('manually_changed', true);
+    $(this).data('previous_total', payment);
     var bal = grand_total - payment;
     $('#payment_due').text(__currency_trans_from_en(bal, true, true));
 });

@@ -172,12 +172,16 @@ class StockTransferController extends Controller
             return $this->moduleUtil->expiredResponse(action([\App\Http\Controllers\StockTransferController::class, 'index']));
         }
 
-        $business_locations = BusinessLocation::forDropdown($business_id, false, false, true, false);
+        // Location (From) - only permitted locations
+        $from_locations = BusinessLocation::forDropdown($business_id, false, false, true, true);
+        
+        // Location (To) - all locations
+        $to_locations = BusinessLocation::forDropdown($business_id, false, false, true, false);
 
         $statuses = $this->stockTransferStatuses();
 
         return view('stock_transfer.create')
-                ->with(compact('business_locations', 'statuses'));
+                ->with(compact('from_locations', 'to_locations', 'statuses'));
     }
 
     private function stockTransferStatuses()
@@ -642,7 +646,11 @@ class StockTransferController extends Controller
     {
         $business_id = request()->session()->get('user.business_id');
 
-        $business_locations = BusinessLocation::forDropdown($business_id, false, false, true, false);
+        // Location (From) - only permitted locations
+        $from_locations = BusinessLocation::forDropdown($business_id, false, false, true, true);
+        
+        // Location (To) - all locations
+        $to_locations = BusinessLocation::forDropdown($business_id, false, false, true, false);
 
         $statuses = $this->stockTransferStatuses();
 
@@ -685,7 +693,7 @@ class StockTransferController extends Controller
         }
 
         return view('stock_transfer.edit')
-                ->with(compact('sell_transfer', 'purchase_transfer', 'business_locations', 'statuses', 'products'));
+                ->with(compact('sell_transfer', 'purchase_transfer', 'from_locations', 'to_locations', 'statuses', 'products'));
     }
 
     /**

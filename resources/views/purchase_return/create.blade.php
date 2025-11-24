@@ -107,6 +107,9 @@
 									@lang('sale.unit_price')
 								</th>
 								<th class="text-center">
+									@lang('purchase.purchase_tax')
+								</th>
+								<th class="text-center">
 									@lang('sale.subtotal')
 								</th>
 								<th class="text-center"><i class="fa fa-trash" aria-hidden="true"></i></th>
@@ -118,20 +121,14 @@
 					</div>
 				</div>
 				<div class="clearfix"></div>
-				<div class="col-md-4">
-					<div class="form-group">
-						{!! Form::label('tax_id', __('purchase.purchase_tax') . ':') !!}
-						<select name="tax_id" id="tax_id" class="form-control select2" placeholder="'Please Select'">
-							<option value="" data-tax_amount="0" data-tax_type="fixed" selected>@lang('lang_v1.none')</option>
-							@foreach($taxes as $tax)
-								<option value="{{ $tax->id }}" data-tax_amount="{{ $tax->amount }}" data-tax_type="{{ $tax->calculation_type }}">{{ $tax->name }}</option>
-							@endforeach
-						</select>
+				<div class="col-md-12">
+					<div class="pull-right">
+						<strong>@lang('lang_v1.total_return_tax'): </strong>
+						<span id="total_return_tax">0.00</span>
 						{!! Form::hidden('tax_amount', 0, ['id' => 'tax_amount']); !!}
+						&nbsp;&nbsp;
+						<b>@lang('stock_adjustment.total_amount'):</b> <span id="total_return">0.00</span>
 					</div>
-				</div>
-				<div class="col-md-8">
-					<div class="pull-right"><b>@lang('stock_adjustment.total_amount'):</b> <span id="total_return">0.00</span></div>
 				</div>
 			</div>
 		</div>

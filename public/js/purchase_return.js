@@ -108,6 +108,9 @@ $(document).ready(function() {
     $(document).on('change', 'input.product_unit_price', function() {
         update_table_row($(this).closest('tr'));
     });
+    $(document).on('change', 'select.product_tax_id', function() {
+        update_table_row($(this).closest('tr'));
+    });
 
     $(document).on('click', '.remove_product_row', function() {
         swal({
@@ -148,9 +151,6 @@ $(document).ready(function() {
         }
     });
 
-    $('#tax_id').change(function() {
-        update_table_total();
-    });
 
     $('#purchase_return_product_table tbody')
     .find('.expiry_datepicker')
@@ -188,16 +188,32 @@ function purchase_return_product_row(variation_id) {
 
 function update_table_total() {
     var table_total = 0;
+    var total_tax = 0;
     $('table#purchase_return_product_table tbody tr').each(function() {
-        var this_total = parseFloat(__read_number($(this).find('input.product_line_total')));
-        if (this_total) {
-            table_total += this_total;
+        var quantity = parseFloat(__read_number($(this).find('input.product_quantity')));
+        var unit_price = parseFloat(__read_number($(this).find('input.product_unit_price')));
+        var subtotal_before_tax = 0;
+        if (quantity && unit_price) {
+            subtotal_before_tax = quantity * unit_price;
         }
+        
+        // Calculate tax for this line
+        var tax_rate = parseFloat($(this).find('select.product_tax_id').find(':selected').data('tax_amount')) || 0;
+        var tax_type = $(this).find('select.product_tax_id').find(':selected').data('tax_type') || 'percentage';
+        var line_tax = __calculate_amount(tax_type, tax_rate, subtotal_before_tax);
+        
+        $(this).find('input.product_item_tax').val(line_tax);
+        
+        var line_total = subtotal_before_tax + line_tax;
+        $(this).find('input.product_line_total').val(__number_f(line_total));
+        
+        table_total += subtotal_before_tax;
+        total_tax += line_tax;
     });
-    var tax_rate = parseFloat($('option:selected', $('#tax_id')).data('tax_amount'));
-    var tax = __calculate_amount('percentage', tax_rate, table_total);
-    __write_number($('input#tax_amount'), tax);
-    var final_total = table_total + tax;
+    
+    __write_number($('input#tax_amount'), total_tax);
+    $('span#total_return_tax').text(__currency_trans_from_en(total_tax, true));
+    var final_total = table_total + total_tax;
     $('input#total_amount').val(final_total);
     $('span#total_return').text(__number_f(final_total));
 }
@@ -205,10 +221,19 @@ function update_table_total() {
 function update_table_row(tr) {
     var quantity = parseFloat(__read_number(tr.find('input.product_quantity')));
     var unit_price = parseFloat(__read_number(tr.find('input.product_unit_price')));
-    var row_total = 0;
+    var subtotal_before_tax = 0;
     if (quantity && unit_price) {
-        row_total = quantity * unit_price;
+        subtotal_before_tax = quantity * unit_price;
     }
+    
+    // Calculate tax for this line
+    var tax_rate = parseFloat(tr.find('select.product_tax_id').find(':selected').data('tax_amount')) || 0;
+    var tax_type = tr.find('select.product_tax_id').find(':selected').data('tax_type') || 'percentage';
+    var line_tax = __calculate_amount(tax_type, tax_rate, subtotal_before_tax);
+    
+    tr.find('input.product_item_tax').val(line_tax);
+    
+    var row_total = subtotal_before_tax + line_tax;
     tr.find('input.product_line_total').val(__number_f(row_total));
     update_table_total();
 }

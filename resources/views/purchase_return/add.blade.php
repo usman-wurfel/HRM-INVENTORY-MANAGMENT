@@ -46,6 +46,7 @@
 			              	<th>@lang('purchase.purchase_quantity')</th>
 			              	<th>@lang('lang_v1.quantity_left')</th>
 			              	<th>@lang('lang_v1.return_quantity')</th>
+			              	<th>@lang('purchase.purchase_tax')</th>
 			              	<th>@lang('lang_v1.return_subtotal')</th>
 			            </tr>
 			        </thead>
@@ -102,8 +103,17 @@
 					            <input type="hidden" class="unit_price" value="{{@num_format($purchase_line->purchase_price_inc_tax)}}">
 			              	</td>
 			              	<td>
+			              		<select name="return_tax[{{$purchase_line->id}}]" class="form-control input-sm return_line_tax_id">
+			              			<option value="" data-tax_amount="0" @if(empty($purchase_line->tax_id)) selected @endif>@lang('lang_v1.none')</option>
+			              			@foreach($taxes as $tax)
+			              				<option value="{{ $tax->id }}" data-tax_amount="{{ $tax->amount }}" @if($purchase_line->tax_id == $tax->id) selected @endif>{{ $tax->name }}</option>
+			              			@endforeach
+			              		</select>
+			              		<input type="hidden" class="return_line_tax_amount" value="0">
+			              	</td>
+			              	<td>
 			              		<div class="return_subtotal"></div>
-			              		
+			              		<input type="hidden" class="return_subtotal_hidden" value="0">
 			              	</td>
 			            </tr>
 			          	@endforeach
@@ -114,16 +124,8 @@
 		<div class="row">
 			<div class="col-sm-4">
 				<strong>@lang('lang_v1.total_return_tax'): </strong>
-				<span id="total_return_tax"></span> @if(!empty($purchase->tax))({{$purchase->tax->name}} - {{$purchase->tax->amount}}%)@endif
-				@php
-					$tax_percent = 0;
-					if(!empty($purchase->tax)){
-						$tax_percent = $purchase->tax->amount;
-					}
-				@endphp
-				{!! Form::hidden('tax_id', $purchase->tax_id); !!}
+				<span id="total_return_tax"></span>
 				{!! Form::hidden('tax_amount', 0, ['id' => 'tax_amount']); !!}
-				{!! Form::hidden('tax_percent', $tax_percent, ['id' => 'tax_percent']); !!}
 			</div>
 		</div>
 		<div class="row">
@@ -156,20 +158,33 @@
 
 	function update_purchase_return_total(){
 		var net_return = 0;
+		var total_tax = 0;
 		$('table#purchase_return_table tbody tr').each( function(){
 			var quantity = __read_number($(this).find('input.return_qty'));
 			var unit_price = __read_number($(this).find('input.unit_price'));
-			var subtotal = quantity * unit_price;
-			$(this).find('.return_subtotal').text(__currency_trans_from_en(subtotal, true));
-			net_return += subtotal;
+			var subtotal_before_tax = quantity * unit_price;
+			
+			// Calculate tax for this line
+			var tax_rate = parseFloat($(this).find('select.return_line_tax_id').find(':selected').data('tax_amount')) || 0;
+			var line_tax = __calculate_amount('percentage', tax_rate, subtotal_before_tax);
+			var subtotal_after_tax = subtotal_before_tax + line_tax;
+			
+			$(this).find('input.return_line_tax_amount').val(line_tax);
+			$(this).find('input.return_subtotal_hidden').val(subtotal_after_tax);
+			$(this).find('.return_subtotal').text(__currency_trans_from_en(subtotal_after_tax, true));
+			
+			net_return += subtotal_before_tax;
+			total_tax += line_tax;
 		});
-		var tax_percent = $('input#tax_percent').val();
-		var total_tax = __calculate_amount('percentage', tax_percent, net_return);
-		var net_return_inc_tax = total_tax + net_return;
+		var net_return_inc_tax = net_return + total_tax;
 
 		$('input#tax_amount').val(total_tax);
 		$('span#total_return_tax').text(__currency_trans_from_en(total_tax, true));
 		$('span#net_return').text(__currency_trans_from_en(net_return_inc_tax, true));
 	}
+	
+	$(document).on('change', 'select.return_line_tax_id', function(){
+		update_purchase_return_total();
+	});
 </script>
 @endsection

@@ -29,11 +29,14 @@
             @php
                 $qty = $product->quantity_returned;
                 $purchase_price = $product->purchase_price;
+                $item_tax = !empty($product->item_tax) ? $product->item_tax : 0;
+                $line_total = ($qty * $purchase_price) + $item_tax;
             @endphp
         @else
             @php
                 $qty = 1;
                 $purchase_price = $product->last_purchased_price;
+                $line_total = $qty * $purchase_price;
             @endphp
         @endif
 
@@ -49,7 +52,18 @@
         <input type="text" name="products[{{$row_index}}][unit_price]" class="form-control product_unit_price input_number" value="{{@num_format($purchase_price)}}">
     </td>
     <td>
-        <input type="text" readonly name="products[{{$row_index}}][price]" class="form-control product_line_total" value="{{@num_format($qty*$purchase_price)}}">
+        <select name="products[{{$row_index}}][tax_id]" class="form-control product_tax_id">
+            <option value="" data-tax_amount="0" data-tax_type="fixed" @if(empty($product->tax_id)) selected @endif>@lang('lang_v1.none')</option>
+            @if(isset($taxes))
+                @foreach($taxes as $tax)
+                    <option value="{{ $tax->id }}" data-tax_amount="{{ $tax->amount }}" data-tax_type="{{ $tax->calculation_type }}" @if(!empty($product->tax_id) && $product->tax_id == $tax->id) selected @endif>{{ $tax->name }}</option>
+                @endforeach
+            @endif
+        </select>
+        <input type="hidden" name="products[{{$row_index}}][item_tax]" class="product_item_tax" value="{{!empty($edit) && !empty($product->item_tax) ? @num_format($product->item_tax) : '0'}}">
+    </td>
+    <td>
+        <input type="text" readonly name="products[{{$row_index}}][price]" class="form-control product_line_total" value="{{@num_format($line_total)}}">
     </td>
     <td class="text-center">
         <i class="fa fa-trash remove_product_row cursor-pointer" aria-hidden="true"></i>

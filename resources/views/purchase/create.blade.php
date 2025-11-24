@@ -28,7 +28,7 @@
 	<!-- Hidden fields for removed form elements -->
 	{!! Form::hidden('discount_type', '') !!}
 	{!! Form::hidden('discount_amount', 0) !!}
-	{!! Form::hidden('tax_id', '') !!}
+	{!! Form::hidden('tax_id', null) !!}
 	{!! Form::hidden('tax_amount', 0) !!}
 	{!! Form::hidden('shipping_charges', 0) !!}
 	{!! Form::hidden('shipping_details', '') !!}
@@ -258,6 +258,7 @@
 			if( session()->get('business.enable_inline_tax') == 0){
 				$hide_tax = 'hide';
 			}
+			$is_purchase_order = $is_purchase_order ?? false;
 		@endphp
 		<div class="row">
 			<div class="col-sm-12">
@@ -270,18 +271,20 @@
 								<th>@lang( 'purchase.purchase_quantity' )</th>
 								<th>@lang( 'lang_v1.unit_cost_before_discount' )</th>
 								<th>@lang( 'lang_v1.discount_percent' )</th>
-								<th>@lang( 'purchase.unit_cost_before_tax' )</th>
-								<th class="{{$hide_tax}}">@lang( 'purchase.subtotal_before_tax' )</th>
-								<th class="{{$hide_tax}}">@lang( 'purchase.product_tax' )</th>
-								<th class="{{$hide_tax}}">@lang( 'purchase.net_cost' )</th>
+							<th class="hide">@lang( 'purchase.unit_cost_before_tax' )</th>
+							<th class="{{$hide_tax}}">@lang( 'purchase.subtotal_before_tax' )</th>
+							<th>@lang( 'purchase.product_tax' )</th>
+							<th class="{{$hide_tax}}">@lang( 'purchase.net_cost' )</th>
 								<th>@lang( 'purchase.line_total' )</th>
 								<th class="@if(!session('business.enable_editing_product_from_purchase')) hide @endif">
 									@lang( 'lang_v1.profit_margin' )
 								</th>
+								@if(empty($is_purchase_order))
 								<th>
 									@lang( 'purchase.unit_selling_price' )
 									<small>(@lang('product.inc_of_tax'))</small>
 								</th>
+								@endif
 								@if(session('business.enable_lot_number'))
 									<th>
 										@lang('lang_v1.lot_number')
@@ -315,6 +318,13 @@
 							</td>
 						</tr>
 						<tr>
+							<th class="col-md-7 text-right">@lang( 'purchase.purchase_tax' ):</th>
+							<td class="col-md-5 text-left">
+								<span id="total_tax_amount" class="display_currency">0.00</span>
+								<input type="hidden" id="total_tax_amount_input" value=0>
+							</td>
+						</tr>
+						<tr>
 							<th class="col-md-7 text-right">@lang( 'purchase.net_total_amount' ):</th>
 							<td class="col-md-5 text-left">
 								<span id="total_subtotal" class="display_currency"></span>
@@ -322,6 +332,7 @@
 								<input type="hidden" id="total_subtotal_input" value=0  name="total_before_tax">
 							</td>
 						</tr>
+						
 					</table>
 				</div>
 
@@ -332,7 +343,7 @@
 
 	@component('components.widget', ['class' => 'box-primary', 'title' => __('purchase.add_payment')])
 		<div class="box-body payment_row">
-			<div class="row">
+			<div class="row hide">
 				<div class="col-md-12">
 					<strong>@lang('lang_v1.advance_balance'):</strong> <span id="advance_balance_text">0</span>
 					{!! Form::hidden('advance_balance', null, ['id' => 'advance_balance', 'data-error-msg' => __('lang_v1.required_advance_balance_not_available')]); !!}

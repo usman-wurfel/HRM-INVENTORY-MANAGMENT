@@ -123,7 +123,7 @@
                 </small>
             @endif
         </td>
-        <td>
+        <td class="hide">
             {!! Form::text('purchases[' . $row_count . '][purchase_price]',
             number_format($purchase_price, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm purchase_unit_cost input_number', 'required']); !!}
         </td>
@@ -131,13 +131,13 @@
             <span class="row_subtotal_before_tax display_currency">0</span>
             <input type="hidden" class="row_subtotal_before_tax_hidden" value=0>
         </td>
-        <td class="{{$hide_tax}}">
+        <td>
             <div class="input-group">
                 <select name="purchases[{{ $row_count }}][purchase_line_tax_id]" class="form-control select2 input-sm purchase_line_tax_id" placeholder="'Please Select'">
-                    <option value="" data-tax_amount="0" @if( $hide_tax == 'hide' )
+                    <option value="" data-tax_amount="0" @if( $hide_tax == 'hide' || empty($tax_id))
                     selected @endif >@lang('lang_v1.none')</option>
                     @foreach($taxes as $tax)
-                        <option value="{{ $tax->id }}" data-tax_amount="{{ $tax->amount }}" @if( $tax_id == $tax->id && $hide_tax != 'hide') selected @endif >{{ $tax->name }}</option>
+                        <option value="{{ $tax->id }}" data-tax_amount="{{ $tax->amount }}" @if( $tax_id == $tax->id) selected @endif >{{ $tax->name }}</option>
                     @endforeach
                 </select>
                 {!! Form::hidden('purchases[' . $row_count . '][item_tax]', 0, ['class' => 'purchase_product_unit_tax']); !!}
@@ -156,6 +156,7 @@
 
             @endphp
             {!! Form::text('purchases[' . $row_count . '][purchase_price_inc_tax]', $dpp_inc_tax, ['class' => 'form-control input-sm purchase_unit_cost_after_tax input_number', 'required']); !!}
+            {!! Form::hidden('purchases[' . $row_count . '][purchase_price]', number_format($purchase_price, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'purchase_unit_cost']); !!}
         </td>
         <td>
             <span class="row_subtotal_after_tax display_currency">0</span>

@@ -16,9 +16,9 @@
                 <th>@if(empty($is_purchase_order)) @lang( 'purchase.purchase_quantity' ) @else @lang( 'lang_v1.order_quantity' ) @endif</th>
                 <th>@lang( 'lang_v1.unit_cost_before_discount' )</th>
                 <th>@lang( 'lang_v1.discount_percent' )</th>
-                <th>@lang( 'purchase.unit_cost_before_tax' )</th>
+                <th class="hide">@lang( 'purchase.unit_cost_before_tax' )</th>
                 <th class="{{$hide_tax}}">@lang( 'purchase.subtotal_before_tax' )</th>
-                <th class="{{$hide_tax}}">@lang( 'purchase.product_tax' )</th>
+                <th>@lang( 'purchase.product_tax' )</th>
                 <th class="{{$hide_tax}}">@lang( 'purchase.net_cost' )</th>
                 <th>@lang( 'purchase.line_total' )</th>
                 <th class="@if(!session('business.enable_editing_product_from_purchase') || !empty($is_purchase_order)) hide @endif">
@@ -128,7 +128,7 @@
             <td>
                 {!! Form::text('purchases[' . $loop->index . '][discount_percent]', number_format($purchase_line->discount_percent, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm inline_discounts input_number', 'required']); !!} <b>%</b>
             </td>
-            <td>
+            <td class="hide">
                 {!! Form::text('purchases[' . $loop->index . '][purchase_price]', 
                 number_format($purchase_line->purchase_price/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm purchase_unit_cost input_number', 'required']); !!}
             </td>
@@ -139,7 +139,7 @@
                 <input type="hidden" class="row_subtotal_before_tax_hidden" value="{{number_format($purchase_line->quantity * $purchase_line->purchase_price/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}">
             </td>
 
-            <td class="{{$hide_tax}}">
+            <td>
                 <div class="input-group">
                     <select name="purchases[{{ $loop->index }}][purchase_line_tax_id]" class="form-control input-sm purchase_line_tax_id" placeholder="'Please Select'">
                         <option value="" data-tax_amount="0" @if( empty( $purchase_line->tax_id ) )
