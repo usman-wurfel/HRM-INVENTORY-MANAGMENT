@@ -172,7 +172,7 @@ class StockTransferController extends Controller
             return $this->moduleUtil->expiredResponse(action([\App\Http\Controllers\StockTransferController::class, 'index']));
         }
 
-        $business_locations = BusinessLocation::forDropdown($business_id);
+        $business_locations = BusinessLocation::forDropdown($business_id, false, false, true, false);
 
         $statuses = $this->stockTransferStatuses();
 
@@ -642,7 +642,7 @@ class StockTransferController extends Controller
     {
         $business_id = request()->session()->get('user.business_id');
 
-        $business_locations = BusinessLocation::forDropdown($business_id);
+        $business_locations = BusinessLocation::forDropdown($business_id, false, false, true, false);
 
         $statuses = $this->stockTransferStatuses();
 
