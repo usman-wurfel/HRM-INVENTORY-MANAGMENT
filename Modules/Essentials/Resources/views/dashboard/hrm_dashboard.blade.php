@@ -12,27 +12,29 @@
                     'title' => __('essentials::lang.my_leaves'),
                     'icon' => '<i class="fas fa-sign-out-alt"></i>',
                 ])
-                    <table class="table no-margin">
-                        <thead>
-                            @forelse($users_leaves as $user_leave)
-                                <tr>
-                                    <td>
-                                        {{ @format_date($user_leave->start_date) }}
-                                        - {{ @format_date($user_leave->end_date) }}
-                                    </td>
-                                    <td>
-                                        {{ $user_leave->leave_type->leave_type }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="2" class="text-center">
-                                        @lang('lang_v1.no_data')
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </thead>
-                    </table>
+                    <div class="widget-content-scroll">
+                        <table class="table no-margin">
+                            <thead>
+                                @forelse($users_leaves as $user_leave)
+                                    <tr>
+                                        <td>
+                                            {{ @format_date($user_leave->start_date) }}
+                                            - {{ @format_date($user_leave->end_date) }}
+                                        </td>
+                                        <td>
+                                            {{ $user_leave->leave_type->leave_type }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="2" class="text-center">
+                                            @lang('lang_v1.no_data')
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </thead>
+                        </table>
+                    </div>
                 @endcomponent
             </div>
             <div class="col-md-4 col-sm-6 col-xs-12 col-custom">
@@ -41,7 +43,7 @@
                     'title' => __('essentials::lang.my_sales_targets'),
                     'icon' => '<i class="fas fa-bullseye"></i>',
                 ])
-                    <div class="">
+                    <div class="widget-content-scroll">
                         <table class="table no-margin">
                             <thead>
                                 <tr>
@@ -90,22 +92,6 @@
             @if (!$is_admin)
                 @include('essentials::dashboard.holidays')
             @endif
-            <div class="col-md-4 col-sm-6 col-xs-12 text-center">
-                <a href="{{ action([\Modules\Essentials\Http\Controllers\PayrollController::class, 'getMyPayrolls']) }}"
-                    class="tw-dw-btn tw-dw-btn-success tw-text-white tw-dw-btn-lg">
-                    <i class="fas fa-coins"></i>
-                    @lang('essentials::lang.my_payrolls')
-                </a>
-            </div>
-            @if(auth()->user()->can('essentials.loan_request') || auth()->user()->can('essentials.loan_manage'))
-            <div class="col-md-4 col-sm-6 col-xs-12 text-center">
-                <a href="{{ action([\Modules\Essentials\Http\Controllers\LoanController::class, 'index']) }}"
-                    class="tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-lg">
-                    <i class="fas fa-money-bill-wave"></i>
-                    @lang('essentials::lang.loan')
-                </a>
-            </div>
-            @endif
         </div>
         @if ($is_admin)
             <hr>
@@ -118,51 +104,53 @@
                         'title' => __('user.users'),
                         'icon' => '<i class="fas fa-users"></i>',
                     ])
-                        <table class="table no-margin">
-                            <tr>
-                                <th class="bg-light-gray" colspan="2">@lang('home.today')</th>
-                            </tr>
-                            @forelse($todays_leaves as $leave)
+                        <div class="widget-content-scroll">
+                            <table class="table no-margin">
                                 <tr>
-                                    <td>
-                                        {{ @format_date($leave->start_date) }}
-                                        - {{ @format_date($leave->end_date) }}
-                                    </td>
-                                    <td>
-                                        {{ $leave->leave_type->leave_type }}
-                                    </td>
+                                    <th class="bg-light-gray" colspan="2">@lang('home.today')</th>
                                 </tr>
-                            @empty
+                                @forelse($todays_leaves as $leave)
+                                    <tr>
+                                        <td>
+                                            {{ @format_date($leave->start_date) }}
+                                            - {{ @format_date($leave->end_date) }}
+                                        </td>
+                                        <td>
+                                            {{ $leave->leave_type->leave_type }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="2" class="text-center">
+                                            @lang('lang_v1.no_data')
+                                        </td>
+                                    </tr>
+                                @endforelse
                                 <tr>
-                                    <td colspan="2" class="text-center">
-                                        @lang('lang_v1.no_data')
-                                    </td>
+                                    <td colspan="2">&nbsp;</td>
                                 </tr>
-                            @endforelse
-                            <tr>
-                                <td colspan="2">&nbsp;</td>
-                            </tr>
-                            <tr>
-                                <th class="bg-light-gray" colspan="2">@lang('lang_v1.upcoming')</th>
-                            </tr>
-                            @forelse($upcoming_leaves as $leave)
                                 <tr>
-                                    <td>
-                                        {{ @format_date($leave->start_date) }}
-                                        - {{ @format_date($leave->end_date) }}
-                                    </td>
-                                    <td>
-                                        {{ $leave->leave_type->leave_type }}
-                                    </td>
+                                    <th class="bg-light-gray" colspan="2">@lang('lang_v1.upcoming')</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="2" class="text-center">
-                                        @lang('lang_v1.no_data')
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </table>
+                                @forelse($upcoming_leaves as $leave)
+                                    <tr>
+                                        <td>
+                                            {{ @format_date($leave->start_date) }}
+                                            - {{ @format_date($leave->end_date) }}
+                                        </td>
+                                        <td>
+                                            {{ $leave->leave_type->leave_type }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="2" class="text-center">
+                                            @lang('lang_v1.no_data')
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </table>
+                        </div>
                     @endcomponent
                 </div>
 
@@ -174,51 +162,53 @@
                         'title' => __('essentials::lang.leaves'),
                         'icon' => '<i class="fas fa-user-times"></i>',
                     ])
-                        <table class="table no-margin">
-                            <tr>
-                                <th class="bg-light-gray" colspan="2">@lang('home.today')</th>
-                            </tr>
-                            @forelse($todays_leaves as $leave)
+                        <div class="widget-content-scroll">
+                            <table class="table no-margin">
                                 <tr>
-                                    <td>
-                                        {{ @format_date($leave->start_date) }}
-                                        - {{ @format_date($leave->end_date) }}
-                                    </td>
-                                    <td>
-                                        {{ $leave->leave_type->leave_type }}
-                                    </td>
+                                    <th class="bg-light-gray" colspan="2">@lang('home.today')</th>
                                 </tr>
-                            @empty
+                                @forelse($todays_leaves as $leave)
+                                    <tr>
+                                        <td>
+                                            {{ @format_date($leave->start_date) }}
+                                            - {{ @format_date($leave->end_date) }}
+                                        </td>
+                                        <td>
+                                            {{ $leave->leave_type->leave_type }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="2" class="text-center">
+                                            @lang('lang_v1.no_data')
+                                        </td>
+                                    </tr>
+                                @endforelse
                                 <tr>
-                                    <td colspan="2" class="text-center">
-                                        @lang('lang_v1.no_data')
-                                    </td>
+                                    <td colspan="2">&nbsp;</td>
                                 </tr>
-                            @endforelse
-                            <tr>
-                                <td colspan="2">&nbsp;</td>
-                            </tr>
-                            <tr>
-                                <th class="bg-light-gray" colspan="2">@lang('lang_v1.upcoming')</th>
-                            </tr>
-                            @forelse($upcoming_leaves as $leave)
                                 <tr>
-                                    <td>
-                                        {{ @format_date($leave->start_date) }}
-                                        - {{ @format_date($leave->end_date) }}
-                                    </td>
-                                    <td>
-                                        {{ $leave->leave_type->leave_type }}
-                                    </td>
+                                    <th class="bg-light-gray" colspan="2">@lang('lang_v1.upcoming')</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="2" class="text-center">
-                                        @lang('lang_v1.no_data')
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </table>
+                                @forelse($upcoming_leaves as $leave)
+                                    <tr>
+                                        <td>
+                                            {{ @format_date($leave->start_date) }}
+                                            - {{ @format_date($leave->end_date) }}
+                                        </td>
+                                        <td>
+                                            {{ $leave->leave_type->leave_type }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="2" class="text-center">
+                                            @lang('lang_v1.no_data')
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </table>
+                        </div>
                     @endcomponent
                 </div>
             @endcan
@@ -284,48 +274,50 @@
                         'title' => __('essentials::lang.todays_attendance'),
                         'icon' => '<i class="fas fa-user-check"></i>',
                     ])
-                        <table class="table no-margin">
-                            <thead>
-                                <tr>
-                                    <th>
-                                        @lang('essentials::lang.employee')
-                                    </th>
-                                    <th>
-                                        @lang('essentials::lang.clock_in')
-                                    </th>
-                                    <th>
-                                        @lang('essentials::lang.clock_out')
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($todays_attendances as $attendance)
+                        <div class="widget-content-scroll">
+                            <table class="table no-margin">
+                                <thead>
                                     <tr>
-                                        <td>{{ $attendance->employee->user_full_name }}</td>
-                                        <td>
-                                            {{ @format_datetime($attendance->clock_in_time) }}
-
-                                            @if (!empty($attendance->clock_in_note))
-                                                <br><small>{{ $attendance->clock_in_note }}</small>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if (!empty($attendance->clock_out_time))
-                                                {{ @format_datetime($attendance->clock_out_time) }}
-                                            @endif
-
-                                            @if (!empty($attendance->clock_out_note))
-                                                <br><small>{{ $attendance->clock_out_note }}</small>
-                                            @endif
-                                        </td>
+                                        <th>
+                                            @lang('essentials::lang.employee')
+                                        </th>
+                                        <th>
+                                            @lang('essentials::lang.clock_in')
+                                        </th>
+                                        <th>
+                                            @lang('essentials::lang.clock_out')
+                                        </th>
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="3" class="text-center">@lang('lang_v1.no_data')</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    @forelse($todays_attendances as $attendance)
+                                        <tr>
+                                            <td>{{ $attendance->employee->user_full_name }}</td>
+                                            <td>
+                                                {{ @format_datetime($attendance->clock_in_time) }}
+
+                                                @if (!empty($attendance->clock_in_note))
+                                                    <br><small>{{ $attendance->clock_in_note }}</small>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if (!empty($attendance->clock_out_time))
+                                                    {{ @format_datetime($attendance->clock_out_time) }}
+                                                @endif
+
+                                                @if (!empty($attendance->clock_out_note))
+                                                    <br><small>{{ $attendance->clock_out_note }}</small>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="3" class="text-center">@lang('lang_v1.no_data')</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     @endcomponent
                 </div>
 

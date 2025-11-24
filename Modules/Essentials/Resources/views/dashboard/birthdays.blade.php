@@ -4,7 +4,7 @@
         'title' => __('essentials::lang.birthdays'),
         'icon' => '<i class="fas fa-birthday-cake"></i>',
     ])
-        <div class="">
+        <div class="widget-content-scroll">
             <table class="table no-margin">
                 <tbody>
                     <tr>
