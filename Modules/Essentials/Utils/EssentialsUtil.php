@@ -357,10 +357,6 @@ class EssentialsUtil extends Util
                             \DB::raw("CONCAT(COALESCE(u.surname, ''), ' ', COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) as employee"),
                         ]);
 
-            if ($permitted_locations != 'all') {
-                $holidays->whereIn('essentials_holidays.location_id', $permitted_locations);
-            }
-
             if (! empty($location)) {
                 $holidays->where('essentials_holidays.location_id', $location);
             }
