@@ -88,6 +88,9 @@
 									@lang('sale.unit_price')
 								</th>
 								<th class="col-sm-2 text-center show_price_with_permission">
+									@lang('purchase.purchase_tax')
+								</th>
+								<th class="col-sm-2 text-center show_price_with_permission">
 									@lang('sale.subtotal')
 								</th>
 								<th class="col-sm-2 text-center"><i class="fa fa-trash" aria-hidden="true"></i></th>
@@ -97,17 +100,32 @@
 							@php
 								$product_row_index = 0;
 								$subtotal = 0;
+								$total_tax = 0;
 							@endphp
 							@foreach($products as $product)
 								@include('stock_transfer.partials.product_table_row', ['product' => $product, 'row_index' => $loop->index, 'sub_units' => !empty($product->unit_details) ? $product->unit_details : []])
 								@php
 									$product_row_index = $loop->index + 1;
-									$subtotal += ($product->quantity_ordered*$product->default_purchase_price);
+									$line_total = ($product->quantity_ordered*$product->default_purchase_price);
+									if (!empty($product->item_tax)) {
+										$line_total += $product->item_tax;
+										$total_tax += $product->item_tax;
+									}
+									$subtotal += $line_total;
 								@endphp
 							@endforeach
 						</tbody>
 						<tfoot>
-							<tr class="text-center show_price_with_permission"><td colspan="3"></td><td><div class="pull-right"><b>@lang('sale.total'):</b> <span id="total_adjustment">{{@num_format($subtotal)}}</span></div></td></tr>
+							<tr class="text-center show_price_with_permission">
+								<td colspan="3"></td>
+								<td>
+									<div class="pull-right"><b>@lang('purchase.purchase_tax'):</b> <span id="total_tax_amount">{{@num_format($total_tax)}}</span></div>
+								</td>
+								<td>
+									<div class="pull-right"><b>@lang('sale.total'):</b> <span id="total_adjustment">{{@num_format($subtotal)}}</span></div>
+								</td>
+								<td></td>
+							</tr>
 						</tfoot>
 					</table>
 					<input type="hidden" id="product_row_index" value="{{$product_row_index}}">
@@ -148,6 +166,15 @@
 	<script src="{{ asset('js/stock_transfer.js?v=' . $asset_v) }}"></script>
 	<script type="text/javascript">
 		__page_leave_confirmation('#stock_transfer_form');
+		
+		// Recalculate totals for existing rows on page load
+		$(document).ready(function() {
+			setTimeout(function() {
+				$('table#stock_adjustment_product_table tbody tr').each(function() {
+					update_table_row($(this));
+				});
+			}, 100);
+		});
 	</script>
 @endsection
 @cannot('view_purchase_price')

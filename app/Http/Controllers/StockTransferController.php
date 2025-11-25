@@ -6,6 +6,7 @@ use App\BusinessLocation;
 use App\ExpenseCategory;
 use App\Product;
 use App\PurchaseLine;
+use App\TaxRate;
 use App\Transaction;
 use App\TransactionSellLinesPurchaseLines;
 use App\Utils\ModuleUtil;
@@ -179,9 +180,11 @@ class StockTransferController extends Controller
         $to_locations = BusinessLocation::forDropdown($business_id, false, false, true, false);
 
         $statuses = $this->stockTransferStatuses();
+        
+        $taxes = TaxRate::forBusinessDropdown($business_id, true, true);
 
         return view('stock_transfer.create')
-                ->with(compact('from_locations', 'to_locations', 'statuses'));
+                ->with(compact('from_locations', 'to_locations', 'statuses', 'taxes'));
     }
 
     private function stockTransferStatuses()
@@ -242,13 +245,16 @@ class StockTransferController extends Controller
 
             if (! empty($products)) {
                 foreach ($products as $product) {
+                    $item_tax = !empty($product['item_tax']) ? $this->productUtil->num_uf($product['item_tax']) : 0;
+                    $tax_id = !empty($product['tax_id']) ? $product['tax_id'] : null;
+                    
                     $sell_line_arr = [
                         'product_id' => $product['product_id'],
                         'variation_id' => $product['variation_id'],
                         'quantity' => $this->productUtil->num_uf($product['quantity']),
-                        'item_tax' => 0,
-                        'line_total_tax' => 0,
-                        'tax_id' => null, ];
+                        'item_tax' => $item_tax,
+                        'line_total_tax' => $item_tax,
+                        'tax_id' => $tax_id, ];
 
                     if (! empty($product['product_unit_id'])) {
                         $sell_line_arr['product_unit_id'] = $product['product_unit_id'];
@@ -263,11 +269,16 @@ class StockTransferController extends Controller
                         $sell_line_arr['base_unit_multiplier'] = $product['base_unit_multiplier'];
                     }
 
-                    $sell_line_arr['unit_price'] = $this->productUtil->num_uf($product['unit_price']);
-                    $sell_line_arr['unit_price_inc_tax'] = $sell_line_arr['unit_price'];
+                    $unit_price = $this->productUtil->num_uf($product['unit_price']);
+                    $quantity = $this->productUtil->num_uf($product['quantity']);
+                    $sell_line_arr['unit_price'] = $unit_price;
+                    // Unit price inc tax should include tax per unit
+                    $sell_line_arr['unit_price_inc_tax'] = $quantity > 0 ? $unit_price + ($item_tax / $quantity) : $unit_price;
 
-                    $purchase_line_arr['purchase_price'] = $sell_line_arr['unit_price'];
-                    $purchase_line_arr['purchase_price_inc_tax'] = $sell_line_arr['unit_price'];
+                    $purchase_line_arr['purchase_price'] = $unit_price;
+                    $purchase_line_arr['purchase_price_inc_tax'] = $quantity > 0 ? $unit_price + ($item_tax / $quantity) : $unit_price;
+                    $purchase_line_arr['tax_id'] = $tax_id;
+                    $purchase_line_arr['item_tax'] = $item_tax;
 
                     if (! empty($product['lot_no_line_id'])) {
                         //Add lot_no_line_id to sell line
@@ -675,6 +686,8 @@ class StockTransferController extends Controller
             $product->quantity_ordered = $sell_line->quantity;
             $product->transaction_sell_lines_id = $sell_line->id;
             $product->lot_no_line_id = $sell_line->lot_no_line_id;
+            $product->tax_id = $sell_line->tax_id;
+            $product->item_tax = $sell_line->item_tax;
 
             $product->unit_details = $this->productUtil->getSubUnits($business_id, $product->unit_id);
 
@@ -692,8 +705,10 @@ class StockTransferController extends Controller
             $products[] = $product;
         }
 
+        $taxes = TaxRate::forBusinessDropdown($business_id, true, true);
+        
         return view('stock_transfer.edit')
-                ->with(compact('sell_transfer', 'purchase_transfer', 'from_locations', 'to_locations', 'statuses', 'products'));
+                ->with(compact('sell_transfer', 'purchase_transfer', 'from_locations', 'to_locations', 'statuses', 'products', 'taxes'));
     }
 
     /**
@@ -750,13 +765,16 @@ class StockTransferController extends Controller
             $edited_purchase_lines = [];
             if (! empty($products)) {
                 foreach ($products as $product) {
+                    $item_tax = !empty($product['item_tax']) ? $this->productUtil->num_uf($product['item_tax']) : 0;
+                    $tax_id = !empty($product['tax_id']) ? $product['tax_id'] : null;
+                    
                     $sell_line_arr = [
                         'product_id' => $product['product_id'],
                         'variation_id' => $product['variation_id'],
                         'quantity' => $this->productUtil->num_uf($product['quantity']),
-                        'item_tax' => 0,
-                        'line_total_tax' => 0,
-                        'tax_id' => null, ];
+                        'item_tax' => $item_tax,
+                        'line_total_tax' => $item_tax,
+                        'tax_id' => $tax_id, ];
 
                     if (! empty($product['product_unit_id'])) {
                         $sell_line_arr['product_unit_id'] = $product['product_unit_id'];
@@ -771,11 +789,16 @@ class StockTransferController extends Controller
                         $sell_line_arr['base_unit_multiplier'] = $product['base_unit_multiplier'];
                     }
 
-                    $sell_line_arr['unit_price'] = $this->productUtil->num_uf($product['unit_price']);
-                    $sell_line_arr['unit_price_inc_tax'] = $sell_line_arr['unit_price'];
+                    $unit_price = $this->productUtil->num_uf($product['unit_price']);
+                    $quantity = $this->productUtil->num_uf($product['quantity']);
+                    $sell_line_arr['unit_price'] = $unit_price;
+                    // Unit price inc tax should include tax per unit
+                    $sell_line_arr['unit_price_inc_tax'] = $quantity > 0 ? $unit_price + ($item_tax / $quantity) : $unit_price;
 
-                    $purchase_line_arr['purchase_price'] = $sell_line_arr['unit_price'];
-                    $purchase_line_arr['purchase_price_inc_tax'] = $sell_line_arr['unit_price'];
+                    $purchase_line_arr['purchase_price'] = $unit_price;
+                    $purchase_line_arr['purchase_price_inc_tax'] = $quantity > 0 ? $unit_price + ($item_tax / $quantity) : $unit_price;
+                    $purchase_line_arr['tax_id'] = $tax_id;
+                    $purchase_line_arr['item_tax'] = $item_tax;
                     if (isset($product['transaction_sell_lines_id'])) {
                         $sell_line_arr['transaction_sell_lines_id'] = $product['transaction_sell_lines_id'];
                     }

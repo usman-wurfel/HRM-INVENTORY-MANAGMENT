@@ -110,6 +110,9 @@
                                         @lang('sale.unit_price')
                                     </th>
                                     <th class="col-sm-2 text-center show_price_with_permission">
+                                        @lang('purchase.purchase_tax')
+                                    </th>
+                                    <th class="col-sm-2 text-center show_price_with_permission">
                                         @lang('sale.subtotal')
                                     </th>
                                     <th class="col-sm-2 text-center"><i class="fa fa-trash" aria-hidden="true"></i></th>
@@ -121,9 +124,14 @@
                                 <tr class="text-center show_price_with_permission">
                                     <td colspan="3"></td>
                                     <td>
+                                        <div class="pull-right"><b>@lang('purchase.purchase_tax'): </b> <span
+                                                id="total_tax_amount">0.00</span></div>
+                                    </td>
+                                    <td>
                                         <div class="pull-right"><b>@lang('sale.total'): </b> <span
                                                 id="total_adjustment">0.00</span></div>
                                     </td>
+                                    <td></td>
                                 </tr>
                             </tfoot>
                         </table>

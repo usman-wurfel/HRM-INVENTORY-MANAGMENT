@@ -129,6 +129,19 @@
         <input type="text" name="products[{{$row_index}}][unit_price]" class="form-control product_unit_price input_number " value="{{@num_format($product->default_purchase_price * $multiplier)}}">
     </td>
     <td class="show_price_with_permission">
+        <select name="products[{{$row_index}}][tax_id]" class="form-control product_tax_id">
+            <option value="" data-tax_amount="0" data-tax_type="percentage" @if(empty($product->tax_id)) selected @endif>@lang('lang_v1.none')</option>
+            @if(isset($taxes) && isset($taxes['tax_rates']))
+                @foreach($taxes['tax_rates'] as $tax_id => $tax_name)
+                    @if(!empty($tax_id) && isset($taxes['attributes'][$tax_id]))
+                        <option value="{{ $tax_id }}" data-tax_amount="{{ $taxes['attributes'][$tax_id]['data-rate'] }}" data-tax_type="percentage" @if(!empty($product->tax_id) && $product->tax_id == $tax_id) selected @endif>{{ $tax_name }}</option>
+                    @endif
+                @endforeach
+            @endif
+        </select>
+        <input type="hidden" name="products[{{$row_index}}][item_tax]" class="product_item_tax" value="{{!empty($product->item_tax) ? @num_format($product->item_tax) : '0'}}">
+    </td>
+    <td class="show_price_with_permission">
         <input type="text" readonly name="products[{{$row_index}}][price]" class="form-control product_line_total " value="{{@num_format($product->quantity_ordered*$product->default_purchase_price)}}">
     </td>
     <td class="text-center">

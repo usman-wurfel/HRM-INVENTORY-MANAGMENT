@@ -445,9 +445,16 @@ class StockAdjustmentController extends Controller
             $product->lot_numbers = $lot_numbers;
 
             $sub_units = $this->productUtil->getSubUnits($business_id, $product->unit_id, false, $product->id);
+            
+            // Get taxes for stock transfer
+            $taxes = null;
+            if ($type == 'stock_transfer') {
+                $taxes = \App\TaxRate::forBusinessDropdown($business_id, true, true);
+            }
+            
             if ($type == 'stock_transfer') {
                 return view('stock_transfer.partials.product_table_row')
-                    ->with(compact('product', 'row_index', 'sub_units'));
+                    ->with(compact('product', 'row_index', 'sub_units', 'taxes'));
             } else {
                 return view('stock_adjustment.partials.product_table_row')
                         ->with(compact('product', 'row_index', 'sub_units'));

@@ -41,12 +41,32 @@
                     <p class="help-block"><i> @lang('business.logo_help')</i></p>
             </div>
         </div>
+        <div class="col-sm-4">
+            <div class="form-group">
+                {!! Form::label('date_format', __('business.date_format') . ':*') !!}
+                <div class="input-group">
+                    <span class="input-group-addon">
+                        <i class="fas fa-calendar"></i>
+                    </span>
+                    {!! Form::select('date_format', $date_formats, $business->date_format, ['class' => 'form-control select2', 'required']); !!}
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="form-group">
+                {!! Form::label('time_format', __('business.time_format') . ':*') !!}
+                <div class="input-group">
+                    <span class="input-group-addon">
+                        <i class="fas fa-clock"></i>
+                    </span>
+                    {!! Form::select('time_format', [12 => '12 Hour', 24 => '24 Hour'], $business->time_format, ['class' => 'form-control select2', 'required']); !!}
+                </div>
+            </div>
+        </div>
         <!-- Hidden fields for removed settings -->
         {!! Form::hidden('fy_start_month', $business->fy_start_month); !!}
         {!! Form::hidden('accounting_method', $business->accounting_method); !!}
         {!! Form::hidden('transaction_edit_days', $business->transaction_edit_days); !!}
-        {!! Form::hidden('date_format', $business->date_format); !!}
-        {!! Form::hidden('time_format', $business->time_format); !!}
         {!! Form::hidden('currency_precision', $business->currency_precision); !!}
         {!! Form::hidden('quantity_precision', $business->quantity_precision); !!}
     </div>

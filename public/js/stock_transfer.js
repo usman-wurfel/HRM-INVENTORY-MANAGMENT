@@ -79,6 +79,11 @@ $(document).ready(function() {
     $(document).on('change', 'input.product_unit_price', function() {
         update_table_row($(this).closest('tr'));
     });
+    
+    $(document).on('change', 'select.product_tax_id', function() {
+        var tr = $(this).closest('tr');
+        update_table_row(tr);
+    });
 
     $(document).on('click', '.remove_product_row', function() {
         swal({
@@ -237,7 +242,9 @@ function stock_transfer_product_row(variation_id) {
         dataType: 'html',
         success: function(result) {
             $('table#stock_adjustment_product_table tbody').append(result);
-            update_table_total();
+            // Update totals for the newly added row
+            var new_row = $('table#stock_adjustment_product_table tbody tr').last();
+            update_table_row(new_row);
             $('#product_row_index').val(row_index + 1);
         },
     });
@@ -245,22 +252,33 @@ function stock_transfer_product_row(variation_id) {
 
 function update_table_total() {
     var table_total = 0;
+    var total_tax = 0;
     $('table#stock_adjustment_product_table tbody tr').each(function() {
-        var this_total = parseFloat(__read_number($(this).find('input.product_line_total')));
-        if (this_total) {
+        var this_total = parseFloat(__read_number($(this).find('input.product_line_total'), false)) || 0;
+        var this_tax = parseFloat(__read_number($(this).find('input.product_item_tax'), false)) || 0;
+        if (!isNaN(this_total)) {
             table_total += this_total;
+        }
+        if (!isNaN(this_tax)) {
+            total_tax += this_tax;
         }
     });
 
-    $('span#total_adjustment').text(__number_f(table_total));
+    // Update tax total
+    $('span#total_tax_amount').text(__currency_trans_from_en(total_tax, true, false));
+    
+    // Update subtotal total
+    $('span#total_adjustment').text(__currency_trans_from_en(table_total, true, false));
 
     if ($('input#shipping_charges').length) {
-        var shipping_charges = __read_number($('input#shipping_charges'));
-        table_total += shipping_charges;
+        var shipping_charges = __read_number($('input#shipping_charges'), false) || 0;
+        if (!isNaN(shipping_charges)) {
+            table_total += shipping_charges;
+        }
     }
 
-    $('span#final_total_text').text(__number_f(table_total));
-    $('input#total_amount').val(table_total);
+    $('span#final_total_text').text(__currency_trans_from_en(table_total, true, false));
+    __write_number($('input#total_amount'), table_total, false);
 }
 
 $(document).on('change', '#shipping_charges', function() {
@@ -323,7 +341,11 @@ $(document).on('change', 'select.sub_unit', function() {
 });
 
 function update_table_row(tr) {
-    var quantity = parseFloat(__read_number(tr.find('input.product_quantity')));
+    if (!tr || tr.length == 0) {
+        return;
+    }
+    
+    var quantity = parseFloat(__read_number(tr.find('input.product_quantity'), false)) || 0;
     var multiplier = 1;
 
     if (tr.find('select.sub_unit').length) {
@@ -331,16 +353,39 @@ function update_table_row(tr) {
             tr.find('select.sub_unit')
                 .find(':selected')
                 .data('multiplier')
-        );
+        ) || 1;
     }
     quantity = quantity * multiplier;
     
-    var unit_price = parseFloat(tr.find('input.hidden_base_unit_price').val());
-    var row_total = 0;
-    if (quantity && unit_price) {
-        row_total = quantity * unit_price;
+    var unit_price = parseFloat(__read_number(tr.find('input.product_unit_price'), false)) || 0;
+    if (!unit_price || unit_price == 0) {
+        var hidden_price = tr.find('input.hidden_base_unit_price').val();
+        unit_price = parseFloat(hidden_price) || 0;
     }
-    tr.find('input.product_line_total').val(__number_f(row_total));
+    
+    var subtotal_before_tax = quantity * unit_price;
+    
+    // Calculate tax for this line
+    var selected_tax_option = tr.find('select.product_tax_id').find(':selected');
+    var tax_rate = parseFloat(selected_tax_option.data('tax_amount')) || 0;
+    var tax_type = selected_tax_option.data('tax_type') || 'percentage';
+    var line_tax = 0;
+    
+    if (tax_type == 'percentage' && tax_rate > 0) {
+        line_tax = (subtotal_before_tax * tax_rate) / 100;
+    } else if (tax_type == 'fixed' && tax_rate > 0) {
+        line_tax = tax_rate * quantity;
+    }
+    
+    var row_total = subtotal_before_tax + line_tax;
+    
+    // Update tax amount
+    __write_number(tr.find('input.product_item_tax'), line_tax, false);
+    
+    // Update line total (readonly field, so update value directly with formatted number)
+    __write_number(tr.find('input.product_line_total'), row_total, false);
+    tr.find('input.product_line_total').val(__number_f(row_total, false, false));
+    
     update_table_total();
 }
 
