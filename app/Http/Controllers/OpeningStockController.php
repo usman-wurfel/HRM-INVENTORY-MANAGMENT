@@ -6,6 +6,7 @@ use App\BusinessLocation;
 use App\Product;
 use App\PurchaseLine;
 use App\Transaction;
+use App\VariationLocationDetails;
 use App\Utils\ProductUtil;
 use App\Utils\TransactionUtil;
 use Illuminate\Http\Request;
@@ -76,7 +77,20 @@ class OpeningStockController extends Controller
                     }
 
                     //Show only remaining quantity for editing opening stock.
-                    $purchase_lines[$purchase_line->variation_id][$k]['quantity'] = $purchase_line->quantity_remaining;
+                    $quantity_remaining = $purchase_line->quantity_remaining;
+                    
+                    // If quantity_remaining is 0, check actual available stock from VariationLocationDetails
+                    if ($quantity_remaining == 0) {
+                        $vld = VariationLocationDetails::where('variation_id', $purchase_line->variation_id)
+                            ->where('location_id', $transaction->location_id)
+                            ->first();
+                        
+                        if ($vld && $vld->qty_available > 0) {
+                            $quantity_remaining = $vld->qty_available;
+                        }
+                    }
+                    
+                    $purchase_lines[$purchase_line->variation_id][$k]['quantity'] = $quantity_remaining;
                     $purchase_lines[$purchase_line->variation_id][$k]['purchase_price'] = $purchase_line->purchase_price;
                     $purchase_lines[$purchase_line->variation_id][$k]['purchase_line_id'] = $purchase_line->id;
                     $purchase_lines[$purchase_line->variation_id][$k]['exp_date'] = $purchase_line->exp_date;
@@ -102,6 +116,32 @@ class OpeningStockController extends Controller
             foreach ($locations as $key => $value) {
                 if (! in_array($key, $available_locations)) {
                     unset($locations[$key]);
+                }
+            }
+
+            // For variations without existing opening stock, get current stock from VariationLocationDetails
+            foreach ($product->variations as $variation) {
+                foreach ($available_locations as $location_id) {
+                    // Check if there's no existing opening stock entry for this variation at this location
+                    if (empty($purchases[$location_id][$variation->id])) {
+                        // Get current stock from VariationLocationDetails
+                        $vld = VariationLocationDetails::where('variation_id', $variation->id)
+                            ->where('location_id', $location_id)
+                            ->first();
+                        
+                        if ($vld && $vld->qty_available > 0) {
+                            // If there's stock available, add it to purchases array
+                            $purchases[$location_id][$variation->id][] = [
+                                'quantity' => $vld->qty_available,
+                                'purchase_price' => $variation->default_purchase_price,
+                                'purchase_line_id' => null,
+                                'lot_number' => null,
+                                'transaction_date' => null,
+                                'purchase_line_note' => null,
+                                'secondary_unit_quantity' => 0
+                            ];
+                        }
+                    }
                 }
             }
 
