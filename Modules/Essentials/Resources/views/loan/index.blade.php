@@ -118,6 +118,8 @@
         aria-labelledby="gridSystemModalLabel"></div>
  <div class="modal fade change_status_modal" id="change_status_modal"  tabindex="-1" role="dialog" 
         aria-labelledby="gridSystemModalLabel"></div>
+ <div class="modal fade" id="loan_history_modal" tabindex="-1" role="dialog" 
+        aria-labelledby="gridSystemModalLabel"></div>
 
 @endsection
 
@@ -382,6 +384,28 @@
                         });
                     }
                 });
+            });
+
+            $(document).on('click', 'button.view-loan-history', function(e) {
+                e.preventDefault();
+                var href = $(this).data('href');
+                $('#loan_history_modal').html('');
+                $.ajax({
+                    url: href,
+                    dataType: 'html',
+                    success: function(result) {
+                        $('#loan_history_modal')
+                            .html(result)
+                            .modal('show');
+                    },
+                    error: function(xhr, status, error) {
+                        toastr.error(__('messages.something_went_wrong'));
+                    }
+                });
+            });
+
+            $('#loan_history_modal').on('hidden.bs.modal', function(e) {
+                $(this).html('');
             });
         });
     </script>

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Modules\Essentials\Entities\EssentialsLoan;
+use Spatie\Activitylog\Models\Activity;
 use Yajra\DataTables\Facades\DataTables;
 
 class LoanController extends Controller
@@ -105,8 +106,10 @@ class LoanController extends Controller
                     'action',
                     function ($row) use ($can_manage_loan) {
                         $html = '';
+                        $html .= '<button class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-primary view-loan-history" data-href="'.action([\Modules\Essentials\Http\Controllers\LoanController::class, 'activity'], [$row->id]).'"><i class="fa fa-history"></i> '.__('lang_v1.history').'</button>';
+                        
                         if ($can_manage_loan) {
-                            $html .= '<button class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-error delete-loan" data-href="'.action([\Modules\Essentials\Http\Controllers\LoanController::class, 'destroy'], [$row->id]).'"><i class="fa fa-trash"></i> '.__('messages.delete').'</button>';
+                            $html .= '&nbsp;<button class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-error delete-loan" data-href="'.action([\Modules\Essentials\Http\Controllers\LoanController::class, 'destroy'], [$row->id]).'"><i class="fa fa-trash"></i> '.__('messages.delete').'</button>';
                         }
 
                         if ($can_manage_loan && $row->status == 'pending') {
@@ -116,6 +119,9 @@ class LoanController extends Controller
                         return $html;
                     }
                 )
+                ->addColumn('reason', function ($row) {
+                    return $row->reason ?? '-';
+                })
                 ->editColumn('loan_amount', function ($row) {
                     return $this->moduleUtil->num_f($row->loan_amount, true);
                 })
@@ -140,7 +146,7 @@ class LoanController extends Controller
                     $query->whereRaw("CONCAT(COALESCE(u.surname, ''), ' ', COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) like ?", ["%{$keyword}%"]);
                 })
                 ->removeColumn('id')
-                ->rawColumns(['action', 'status', 'remaining_loan'])
+                ->rawColumns(['action', 'status', 'remaining_loan', 'reason'])
                 ->make(true);
         }
         
@@ -295,6 +301,35 @@ class LoanController extends Controller
         }
 
         return $output;
+    }
+
+    /**
+     * Function to show activity log related to a loan
+     *
+     * @return Response
+     */
+    public function activity($id)
+    {
+        $business_id = request()->session()->get('user.business_id');
+
+        if (! (auth()->user()->can('superadmin') || $this->moduleUtil->hasThePermissionInSubscription($business_id, 'essentials_module'))) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $loan = EssentialsLoan::where('business_id', $business_id)
+                            ->with(['user.roles'])
+                            ->find($id);
+
+        if (!$loan) {
+            abort(404, 'Loan not found.');
+        }
+
+        $activities = Activity::forSubject($loan)
+                           ->with(['causer', 'subject'])
+                           ->latest()
+                           ->get();
+
+        return view('essentials::loan.activity_modal')->with(compact('loan', 'activities'));
     }
 }
 

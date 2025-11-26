@@ -96,5 +96,6 @@ Route::middleware('web', 'authh', 'auth', 'SetSessionData', 'language', 'timezon
 
         Route::resource('/loan', 'Modules\Essentials\Http\Controllers\LoanController');
         Route::post('/loan/change-status', [Modules\Essentials\Http\Controllers\LoanController::class, 'changeStatus']);
+        Route::get('/loan/{id}/activity', [Modules\Essentials\Http\Controllers\LoanController::class, 'activity']);
     });
 });

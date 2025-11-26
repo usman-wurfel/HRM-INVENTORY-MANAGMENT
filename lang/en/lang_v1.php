@@ -648,6 +648,7 @@ return [
     'select_same_for_all_rows' => 'Select same value for all products',
     'edited' => 'Edited',
     'by' => 'By',
+    'history' => 'History',
     'upload_documents' => 'Upload Documents',
     'documents' => 'Documents',
     'click_to_print' => 'Click to print',
