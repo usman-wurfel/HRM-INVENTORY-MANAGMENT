@@ -1004,9 +1004,9 @@ function update_table_total() {
             total_subtotal += __read_number($(this).find('.row_subtotal_after_tax_hidden'), true);
             
             // Calculate tax for this line
+            // item_tax is already the total tax for the line (not per unit)
             var line_tax = __read_number($(this).find('input.purchase_product_unit_tax'), true);
-            var quantity = __read_number($(this).find('.purchase_quantity'), true);
-            total_tax += line_tax * quantity;
+            total_tax += line_tax;
         });
 
     $('#total_quantity').text(__number_f(total_quantity, false));
