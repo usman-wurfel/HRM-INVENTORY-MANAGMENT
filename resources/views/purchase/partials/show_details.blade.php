@@ -329,9 +329,13 @@
             <td><b>(+)</b></td>
             <td class="text-right">
                 @if(!empty($purchase_taxes))
-                  @foreach($purchase_taxes as $k => $v)
-                    <strong><small>{{$k}}</small></strong> - <span class="display_currency pull-right" data-currency_symbol="true">{{ $v }}</span><br>
-                  @endforeach
+                  @php
+                    $total_tax = 0;
+                    foreach($purchase_taxes as $k => $v) {
+                      $total_tax += $v;
+                    }
+                  @endphp
+                  <span class="display_currency pull-right" data-currency_symbol="true">{{ $total_tax }}</span>
                 @else
                 0.00
                 @endif

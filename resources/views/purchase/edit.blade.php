@@ -272,6 +272,13 @@
                     </td>
                   </tr>
                   <tr>
+                    <th class="col-md-7 text-right">@lang( 'purchase.purchase_tax' ):</th>
+                    <td class="col-md-5 text-left">
+                      <span id="total_tax_amount" class="display_currency">0.00</span>
+                      <input type="hidden" id="total_tax_amount_input" value=0>
+                    </td>
+                  </tr>
+                  <tr>
                     <th class="col-md-7 text-right">@lang( 'purchase.net_total_amount' ):</th>
                     <td class="col-md-5 text-left">
                       <span id="total_subtotal" class="display_currency">{{$purchase->total_before_tax/$purchase->exchange_rate}}</span>
@@ -279,6 +286,7 @@
                       <input type="hidden" id="total_subtotal_input" value="{{$purchase->total_before_tax/$purchase->exchange_rate}}" name="total_before_tax">
                     </td>
                   </tr>
+                  
                 </table>
               </div>
 
@@ -294,6 +302,7 @@
           </div>
         </div>
     </div>
+    {!! Form::hidden('final_total', $purchase->final_total/$purchase->exchange_rate, ['id' => 'grand_total_hidden']); !!}
     <div class="row">
         <div class="col-sm-12 text-center">
           <button type="button" id="submit_purchase_form" class="tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-lg">@lang('messages.update')</button>

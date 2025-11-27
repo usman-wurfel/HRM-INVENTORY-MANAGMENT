@@ -102,6 +102,12 @@ class PurchaseController extends Controller
             }
 
             return Datatables::of($purchases)
+                ->addColumn('final_total_raw', function ($row) {
+                    return $row->final_total;
+                })
+                ->addColumn('amount_paid_raw', function ($row) {
+                    return $row->amount_paid ?? 0;
+                })
                 ->addColumn('action', function ($row) {
                     $html = '<div class="btn-group">
                             <button type="button" class="btn-modal tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-info tw-w-max dropdown-toggle" 
@@ -211,6 +217,8 @@ class PurchaseController extends Controller
                         }
                     }, ])
                 ->rawColumns(['final_total', 'action', 'payment_due', 'payment_status', 'status', 'ref_no', 'name'])
+                ->removeColumn('final_total_raw')
+                ->removeColumn('amount_paid_raw')
                 ->make(true);
         }
 
@@ -311,6 +319,7 @@ class PurchaseController extends Controller
             $transaction_data['tax_amount'] = $transaction_data['tax_amount'] ?? 0;
             $transaction_data['shipping_charges'] = $transaction_data['shipping_charges'] ?? 0;
             $transaction_data['shipping_details'] = $transaction_data['shipping_details'] ?? null;
+            $transaction_data['final_total'] = $transaction_data['final_total'] ?? 0;
 
             $exchange_rate = $transaction_data['exchange_rate'];
 
@@ -495,6 +504,24 @@ class PurchaseController extends Controller
                 $purchase_taxes = $this->transactionUtil->sumGroupTaxDetails($this->transactionUtil->groupTaxDetails($purchase->tax, $purchase->tax_amount));
             } else {
                 $purchase_taxes[$purchase->tax->name] = $purchase->tax_amount;
+            }
+        } else {
+            // If no transaction-level tax, calculate from purchase lines
+            $line_taxes = [];
+            foreach ($purchase->purchase_lines as $purchase_line) {
+                if (! empty($purchase_line->item_tax) && $purchase_line->item_tax > 0) {
+                    $tax_name = 'Tax';
+                    if (! empty($purchase_line->tax_id) && isset($taxes[$purchase_line->tax_id])) {
+                        $tax_name = $taxes[$purchase_line->tax_id];
+                    }
+                    if (! isset($line_taxes[$tax_name])) {
+                        $line_taxes[$tax_name] = 0;
+                    }
+                    $line_taxes[$tax_name] += $purchase_line->item_tax;
+                }
+            }
+            if (! empty($line_taxes)) {
+                $purchase_taxes = $line_taxes;
             }
         }
 
@@ -689,6 +716,7 @@ class PurchaseController extends Controller
             $update_data['tax_amount'] = $update_data['tax_amount'] ?? 0;
             $update_data['shipping_charges'] = $update_data['shipping_charges'] ?? 0;
             $update_data['shipping_details'] = $update_data['shipping_details'] ?? null;
+            $update_data['final_total'] = $update_data['final_total'] ?? 0;
 
             $exchange_rate = $update_data['exchange_rate'];
 

@@ -403,7 +403,7 @@
 				$('.payment_types_dropdown').change();
 			}
 			set_payment_type_dropdown();
-			$('select#location_id').change(function() {
+			$('select#location_id').on('change', function() {
 				set_payment_type_dropdown();
 			});
     	});
@@ -419,8 +419,10 @@
 
 	        var account_dropdown = payment_row.find('select#account_' + row_index);
 		    if (payment_type && payment_type != 'advance') {
-		        var default_account = default_accounts && default_accounts[payment_type]['account'] ? 
-		            default_accounts[payment_type]['account'] : '';
+		        var default_account = '';
+		        if (default_accounts && default_accounts[payment_type] && default_accounts[payment_type]['account']) {
+		            default_account = default_accounts[payment_type]['account'];
+		        }
 		        if (account_dropdown.length && default_accounts) {
 		            account_dropdown.val(default_account);
 		            account_dropdown.change();
@@ -441,26 +443,12 @@
 		});
 
 		function set_payment_type_dropdown() {
-			var payment_settings = $('#location_id').find(':selected').data('default_payment_accounts');
-			payment_settings = payment_settings ? payment_settings : [];
-			enabled_payment_types = [];
-			for (var key in payment_settings) {
-				if (payment_settings[key] && payment_settings[key]['is_enabled']) {
-					enabled_payment_types.push(key);
+			// Always show all payment types - no filtering based on location
+			$(".payment_types_dropdown > option").each(function() {
+				if ($(this).val()) {
+					$(this).removeClass('hide').prop('disabled', false).show();
 				}
-			}
-			if (enabled_payment_types.length) {
-				$(".payment_types_dropdown > option").each(function() {
-					//skip if advance
-					if ($(this).val() && $(this).val() != 'advance') {
-						if (enabled_payment_types.indexOf($(this).val()) != -1) {
-							$(this).removeClass('hide');
-						} else {
-							$(this).addClass('hide');
-						}
-					}
-				});
-			}
+			});
 		}
 	</script>
 	@include('purchase.partials.keyboard_shortcuts')

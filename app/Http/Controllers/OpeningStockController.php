@@ -76,18 +76,17 @@ class OpeningStockController extends Controller
                         $purchase_lines[$purchase_line->variation_id] = [];
                     }
 
-                    //Show only remaining quantity for editing opening stock.
-                    $quantity_remaining = $purchase_line->quantity_remaining;
+                    //Show actual available stock from VariationLocationDetails instead of quantity_remaining
+                    //This ensures we show the correct current stock even if it has changed
+                    $vld = VariationLocationDetails::where('variation_id', $purchase_line->variation_id)
+                        ->where('location_id', $transaction->location_id)
+                        ->first();
                     
-                    // If quantity_remaining is 0, check actual available stock from VariationLocationDetails
-                    if ($quantity_remaining == 0) {
-                        $vld = VariationLocationDetails::where('variation_id', $purchase_line->variation_id)
-                            ->where('location_id', $transaction->location_id)
-                            ->first();
-                        
-                        if ($vld && $vld->qty_available > 0) {
-                            $quantity_remaining = $vld->qty_available;
-                        }
+                    // Use actual stock from VariationLocationDetails if available, otherwise use quantity_remaining
+                    if ($vld && $vld->qty_available > 0) {
+                        $quantity_remaining = $vld->qty_available;
+                    } else {
+                        $quantity_remaining = $purchase_line->quantity_remaining;
                     }
                     
                     $purchase_lines[$purchase_line->variation_id][$k]['quantity'] = $quantity_remaining;

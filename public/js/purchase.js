@@ -622,14 +622,42 @@ $(document).ready(function() {
             var total_due = 0;
             var total_purchase_return_due = 0;
             for (var r in data){
-                total_purchase += $(data[r].final_total).data('orig-value') ? 
-                parseFloat($(data[r].final_total).data('orig-value')) : 0;
-                var payment_due_obj = $('<div>' + data[r].payment_due + '</div>');
-                total_due += payment_due_obj.find('.payment_due').data('orig-value') ? 
-                parseFloat(payment_due_obj.find('.payment_due').data('orig-value')) : 0;
+                // Try to get final_total from raw column first, otherwise parse HTML
+                if (data[r].final_total_raw !== undefined) {
+                    total_purchase += parseFloat(data[r].final_total_raw) || 0;
+                } else if (data[r].final_total) {
+                    var final_total_obj = $('<div>' + data[r].final_total + '</div>');
+                    var final_total_span = final_total_obj.find('.final_total');
+                    var final_total_value = final_total_span.length > 0 ? final_total_span.attr('data-orig-value') : null;
+                    if (!final_total_value && final_total_span.length > 0) {
+                        final_total_value = final_total_span.data('orig-value');
+                    }
+                    if (final_total_value) {
+                        total_purchase += parseFloat(final_total_value) || 0;
+                    }
+                }
+                
+                // Parse payment_due HTML to get data-orig-value
+                if (data[r].payment_due) {
+                    var payment_due_obj = $('<div>' + data[r].payment_due + '</div>');
+                    var payment_due_span = payment_due_obj.find('.payment_due');
+                    var payment_due_value = payment_due_span.length > 0 ? payment_due_span.attr('data-orig-value') : null;
+                    if (!payment_due_value && payment_due_span.length > 0) {
+                        payment_due_value = payment_due_span.data('orig-value');
+                    }
+                    if (payment_due_value) {
+                        total_due += parseFloat(payment_due_value) || 0;
+                    }
 
-                total_purchase_return_due += payment_due_obj.find('.purchase_return').data('orig-value') ? 
-                parseFloat(payment_due_obj.find('.purchase_return').data('orig-value')) : 0;
+                    var purchase_return_span = payment_due_obj.find('.purchase_return');
+                    var purchase_return_value = purchase_return_span.length > 0 ? purchase_return_span.attr('data-orig-value') : null;
+                    if (!purchase_return_value && purchase_return_span.length > 0) {
+                        purchase_return_value = purchase_return_span.data('orig-value');
+                    }
+                    if (purchase_return_value) {
+                        total_purchase_return_due += parseFloat(purchase_return_value) || 0;
+                    }
+                }
             }
 
             $('.footer_purchase_total').html(__currency_trans_from_en(total_purchase));

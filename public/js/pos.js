@@ -1557,14 +1557,30 @@ $(document).ready(function() {
 
 function set_payment_type_dropdown() {
     var payment_settings = $('#location_id').data('default_payment_accounts');
-    payment_settings = payment_settings ? payment_settings : [];
+    
+    // Parse if it's a JSON string
+    if (typeof payment_settings === 'string') {
+        try {
+            payment_settings = JSON.parse(payment_settings);
+        } catch(e) {
+            payment_settings = {};
+        }
+    }
+    
+    payment_settings = payment_settings || {};
     enabled_payment_types = [];
+    
+    // Check if location has any payment settings configured and collect enabled types
+    var has_enabled_types = false;
     for (var key in payment_settings) {
         if (payment_settings[key] && payment_settings[key]['is_enabled']) {
             enabled_payment_types.push(key);
+            has_enabled_types = true;
         }
     }
-    if (enabled_payment_types.length) {
+    
+    // If location has enabled payment types, filter to show only those
+    if (has_enabled_types && enabled_payment_types.length > 0) {
         $(".payment_types_dropdown > option").each(function() {
             //skip if advance
             if ($(this).val() && $(this).val() != 'advance') {
@@ -1573,6 +1589,13 @@ function set_payment_type_dropdown() {
                 } else {
                     $(this).addClass('hide');
                 }
+            }
+        });
+    } else {
+        // Show all payment types if no location-specific enabled types
+        $(".payment_types_dropdown > option").each(function() {
+            if ($(this).val() && $(this).val() != 'advance') {
+                $(this).removeClass('hide');
             }
         });
     }
