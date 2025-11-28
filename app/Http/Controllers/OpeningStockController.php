@@ -240,26 +240,51 @@ class OpeningStockController extends Controller
                                 $purchase_line = null;
 
                                 if (isset($pl['purchase_line_id'])) {
-                                    $purchase_line = PurchaseLine::findOrFail($pl['purchase_line_id']);
-                                    //Quantity = remaining + used
-                                    $qty_remaining = $qty_remaining + $purchase_line->quantity_used;
-
-                                    if ($qty_remaining != 0) {
-                                        //Calculate transaction total
-                                        $old_qty = $purchase_line->quantity;
-
-                                        $this->productUtil->updateProductQuantity($location_id, $product->id, $vid, $qty_remaining, $old_qty, null, false);
+                                    $purchase_line = PurchaseLine::with('transaction')->findOrFail($pl['purchase_line_id']);
+                                    
+                                    // Get the purchase_line's original transaction location
+                                    $old_location_id = $purchase_line->transaction->location_id ?? $location_id;
+                                    
+                                    // Get ACTUAL current stock from VariationLocationDetails (not from purchase_line)
+                                    $vld_current = VariationLocationDetails::where('variation_id', $vid)
+                                        ->where('location_id', $location_id)
+                                        ->first();
+                                    $current_stock = $vld_current ? $vld_current->qty_available : 0;
+                                    
+                                    // Calculate quantity_used from database fields to avoid accessor recalculation
+                                    $old_qty_used = ($purchase_line->quantity_sold ?? 0) + ($purchase_line->quantity_adjusted ?? 0) + ($purchase_line->quantity_returned ?? 0) + ($purchase_line->mfg_quantity_used ?? 0);
+                                    
+                                    // User entered new remaining quantity from form
+                                    $new_qty_remaining = $qty_remaining;
+                                    
+                                    // Calculate new total quantity = new remaining + old used
+                                    $new_total_qty = $new_qty_remaining + $old_qty_used;
+                                    
+                                    // Update stock using the actual current stock
+                                    if ($vld_current) {
+                                        $vld_current->qty_available = $new_total_qty;
+                                        $vld_current->save();
+                                    } else {
+                                        // Create new VLD record
+                                        $variation = \App\Variation::find($vid);
+                                        $vld_new = new VariationLocationDetails();
+                                        $vld_new->variation_id = $variation->id;
+                                        $vld_new->product_id = $product->id;
+                                        $vld_new->location_id = $location_id;
+                                        $vld_new->product_variation_id = $variation->product_variation_id;
+                                        $vld_new->qty_available = $new_total_qty;
+                                        $vld_new->save();
                                     }
+                                    
+                                    // Set qty_remaining to new_total_qty for saving to purchase_line
+                                    $qty_remaining = $new_total_qty;
                                 } else {
-                                    if ($qty_remaining != 0) {
+                                    //create newly added purchase lines (allow 0)
+                                    $purchase_line = new PurchaseLine();
+                                    $purchase_line->product_id = $product->id;
+                                    $purchase_line->variation_id = $vid;
 
-                                        //create newly added purchase lines
-                                        $purchase_line = new PurchaseLine();
-                                        $purchase_line->product_id = $product->id;
-                                        $purchase_line->variation_id = $vid;
-
-                                        $this->productUtil->updateProductQuantity($location_id, $product->id, $vid, $qty_remaining, 0, null, false);
-                                    }
+                                    $this->productUtil->updateProductQuantity($location_id, $product->id, $vid, $qty_remaining, 0, null, false);
                                 }
                                 if (! is_null($purchase_line)) {
                                     $purchase_line->item_tax = $item_tax;
