@@ -16,6 +16,11 @@
 	      	</div>
 
 	      	<div class="form-group col-md-12">
+	        	{!! Form::label('repayment_period', __( 'essentials::lang.repayment_period' ) . ':') !!}
+	          	{!! Form::text('repayment_period', null, ['class' => 'form-control', 'placeholder' => __('essentials::lang.repayment_period_placeholder') ]); !!}
+	      	</div>
+
+	      	<div class="form-group col-md-12">
 	        	{!! Form::label('reason', __( 'essentials::lang.reason' ) . ':') !!}
 	          	{!! Form::textarea('reason', null, ['class' => 'form-control', 'placeholder' => __( 'essentials::lang.reason' ), 'rows' => 4, 'required' ]); !!}
 	      	</div>

@@ -80,6 +80,7 @@ class LoanController extends Controller
                             'status_note',
                             'essentials_loans.created_at',
                             'total_deduction_paid',
+                            'repayment_period',
                             DB::raw('(loan_amount - COALESCE(total_deduction_paid, 0)) as remaining_loan'),
                         ]);
 
@@ -121,6 +122,9 @@ class LoanController extends Controller
                 )
                 ->addColumn('reason', function ($row) {
                     return $row->reason ?? '-';
+                })
+                ->addColumn('repayment_period', function ($row) {
+                    return $row->repayment_period ?? '-';
                 })
                 ->editColumn('loan_amount', function ($row) {
                     return $this->moduleUtil->num_f($row->loan_amount, true);
@@ -194,7 +198,7 @@ class LoanController extends Controller
         }
 
         try {
-            $input = $request->only(['loan_amount', 'reason']);
+            $input = $request->only(['loan_amount', 'reason', 'repayment_period']);
 
             $input['business_id'] = $business_id;
             $input['status'] = 'pending';

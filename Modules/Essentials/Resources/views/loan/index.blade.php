@@ -75,6 +75,7 @@
                                             <th>@lang( 'purchase.ref_no' )</th>
                                             <th>@lang('essentials::lang.employee')</th>
                                             <th>@lang( 'essentials::lang.loan_amount' )</th>
+                                            <th>@lang( 'essentials::lang.repayment_period' )</th>
                                             <th>@lang( 'essentials::lang.remaining_loan' )</th>
                                             <th>@lang( 'essentials::lang.reason' )</th>
                                             <th>@lang( 'sale.status' )</th>
@@ -96,6 +97,7 @@
                                             <th>@lang( 'purchase.ref_no' )</th>
                                             <th>@lang('essentials::lang.employee')</th>
                                             <th>@lang( 'essentials::lang.loan_amount' )</th>
+                                            <th>@lang( 'essentials::lang.repayment_period' )</th>
                                             <th>@lang( 'essentials::lang.remaining_loan' )</th>
                                             <th>@lang( 'essentials::lang.reason' )</th>
                                             <th>@lang( 'sale.status' )</th>
@@ -145,7 +147,7 @@
                 },
                 columnDefs: [
                     {
-                        targets: 7,
+                        targets: 8,
                         orderable: false,
                         searchable: false,
                     },
@@ -154,6 +156,7 @@
                     { data: 'ref_no', name: 'ref_no' },
                     { data: 'user', name: 'user' },
                     { data: 'loan_amount', name: 'loan_amount'},
+                    { data: 'repayment_period', name: 'repayment_period'},
                     { data: 'remaining_loan', name: 'remaining_loan'},
                     { data: 'reason', name: 'essentials_loans.reason'},
                     { data: 'status', name: 'essentials_loans.status'},
@@ -180,7 +183,7 @@
                 },
                 columnDefs: [
                     {
-                        targets: 7,
+                        targets: 8,
                         orderable: false,
                         searchable: false,
                     },
@@ -189,6 +192,7 @@
                     { data: 'ref_no', name: 'ref_no' },
                     { data: 'user', name: 'user' },
                     { data: 'loan_amount', name: 'loan_amount'},
+                    { data: 'repayment_period', name: 'repayment_period'},
                     { data: 'remaining_loan', name: 'remaining_loan'},
                     { data: 'reason', name: 'essentials_loans.reason'},
                     { data: 'status', name: 'essentials_loans.status'},
