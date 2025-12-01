@@ -33,7 +33,7 @@
                 </tr>
             </tbody>
         </table>
-        <div class="holidays-scroll-container">
+        <div>
             <table class="table no-margin">
                 <tbody>
                     @forelse($todays_holidays as $holiday)

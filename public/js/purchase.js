@@ -275,15 +275,25 @@ $(document).ready(function() {
         var row = $(this).closest('tr');
         var quantity = __read_number($(this), true);
         var purchase_before_tax = __read_number(row.find('input.purchase_unit_cost'), true);
-        var purchase_after_tax = __read_number(
-            row.find('input.purchase_unit_cost_after_tax'),
-            true
-        );
 
-        //Calculate sub totals
+        //Calculate sub total before tax
         var sub_total_before_tax = quantity * purchase_before_tax;
+
+        //Recalculate tax based on current tax rate
+        var tax_rate = parseFloat(
+            row
+                .find('select.purchase_line_tax_id')
+                .find(':selected')
+                .data('tax_amount')
+        ) || 0;
+        var tax_per_unit = __calculate_amount('percentage', tax_rate, purchase_before_tax);
+        var total_tax = tax_per_unit * quantity;
+
+        //Calculate purchase after tax and subtotal
+        var purchase_after_tax = purchase_before_tax + tax_per_unit;
         var sub_total_after_tax = quantity * purchase_after_tax;
 
+        //Update subtotal before tax
         row.find('.row_subtotal_before_tax').text(
             __currency_trans_from_en(sub_total_before_tax, false, true)
         );
@@ -293,6 +303,16 @@ $(document).ready(function() {
             true
         );
 
+        //Update tax display (showing total tax for the line)
+        row.find('.purchase_product_unit_tax_text').text(
+            __currency_trans_from_en(total_tax, false, true)
+        );
+        __write_number(row.find('input.purchase_product_unit_tax'), total_tax, true);
+
+        //Update purchase after tax
+        __write_number(row.find('input.purchase_unit_cost_after_tax'), purchase_after_tax, true);
+
+        //Update subtotal after tax
         row.find('.row_subtotal_after_tax').text(
             __currency_trans_from_en(sub_total_after_tax, false, true)
         );
