@@ -63,11 +63,21 @@
                 </div>
             </div>
         </div>
+        <div class="col-sm-4">
+            <div class="form-group">
+                {!! Form::label('currency_precision', __('lang_v1.currency_precision') . ':*') !!}
+                <div class="input-group">
+                    <span class="input-group-addon">
+                        <i class="fas fa-calculator"></i>
+                    </span>
+                    {!! Form::number('currency_precision', $business->currency_precision ?? 2, ['class' => 'form-control', 'required', 'min' => 0, 'max' => 8]); !!}
+                </div>
+            </div>
+        </div>
         <!-- Hidden fields for removed settings -->
         {!! Form::hidden('fy_start_month', $business->fy_start_month); !!}
         {!! Form::hidden('accounting_method', $business->accounting_method); !!}
         {!! Form::hidden('transaction_edit_days', $business->transaction_edit_days); !!}
-        {!! Form::hidden('currency_precision', $business->currency_precision); !!}
         {!! Form::hidden('quantity_precision', $business->quantity_precision); !!}
     </div>
      {{-- code --}}
