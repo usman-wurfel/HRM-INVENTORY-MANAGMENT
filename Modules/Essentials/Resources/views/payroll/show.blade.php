@@ -25,7 +25,7 @@
 		      		</tr>
 		      		<tr>
 		      			<td colspan="3">
-		      				<div class="pull-left" style="width: 50% !important;">
+		      				<div class="pull-left employee-details-col" style="width: 50% !important;">
 		      					<strong>@lang('essentials::lang.employee'):</strong>
 		      					{{$payroll->transaction_for->user_full_name}}<br>
 
@@ -58,7 +58,7 @@
 		      					<br>
 		      				</div>
 		      				{{-- Bank details hidden --}}
-		      				 <div class="pull-right" style="width: 50% !important;">
+		      				 <div class="pull-right bank-details-col" style="width: 50% !important;">
 		      					<strong>@lang('lang_v1.bank_name'):</strong>
 		      					{{$bank_details['bank_name'] ?? ''}}
 		      					<br>
@@ -316,5 +316,20 @@
 	#payroll-view>tfoot>tr>th, #payroll-view>thead>tr>td,
 	#payroll-view>tbody>tr>td, #payroll-view>tfoot>tr>td {
 		border: 1px solid #1d1a1a;
+	}
+	
+	/* Mobile responsive styles */
+	@media (max-width: 768px) {
+		.employee-details-col {
+			width: 100% !important;
+			float: none !important;
+			margin-bottom: 15px;
+		}
+		
+		.bank-details-col {
+			width: 100% !important;
+			float: none !important;
+			clear: both;
+		}
 	}
 </style>
