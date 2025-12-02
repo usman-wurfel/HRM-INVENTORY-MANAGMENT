@@ -58,7 +58,7 @@
 		      					<br>
 		      				</div>
 		      				{{-- Bank details hidden --}}
-		      				{{-- <div class="pull-right" style="width: 50% !important;">
+		      				 <div class="pull-right" style="width: 50% !important;">
 		      					<strong>@lang('lang_v1.bank_name'):</strong>
 		      					{{$bank_details['bank_name'] ?? ''}}
 		      					<br>
@@ -78,7 +78,7 @@
 		      					<strong>@lang('lang_v1.bank_account_no'):</strong>
 		      					{{$bank_details['account_number'] ?? ''}}
 		      					<br>
-		      				</div> --}}
+		      				</div> 
 		      			</td>
 		      		</tr>
 		      		<tr>

@@ -283,8 +283,9 @@
             <div class="col-sm-4">
               <div class="form-group">
                 {!! Form::label('tax_type', __('product.selling_price_tax_type') . ':*') !!}
-                  {!! Form::select('tax_type',['inclusive' => __('product.inclusive'), 'exclusive' => __('product.exclusive')], $product->tax_type,
-                  ['class' => 'form-control select2', 'required']); !!}
+                  {!! Form::select('tax_type',['inclusive' => __('product.inclusive'), 'exclusive' => __('product.exclusive')], 'exclusive',
+                  ['class' => 'form-control select2', 'required', 'readonly' => true, 'disabled' => true]); !!}
+                  {!! Form::hidden('tax_type', 'exclusive'); !!}
               </div>
             </div>
 

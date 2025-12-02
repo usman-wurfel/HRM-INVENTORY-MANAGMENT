@@ -11,19 +11,19 @@
 						<table class="table table-condensed table-bordered text-center table-responsive table-striped add_opening_stock_table">
 								<thead>
 								<tr class="bg-green">
-									<th>@lang( 'product.product_name' )</th>
-									<th>@lang( 'lang_v1.quantity_left' )</th>
-									<th>@lang( 'purchase.unit_cost_before_tax' )</th>
+									<th style="min-width: 200px;">@lang( 'product.product_name' )</th>
+									<th style="min-width: 200px;">@lang( 'lang_v1.quantity_left' )</th>
+									<th style="min-width: 200px;">@lang( 'purchase.unit_cost_before_tax' )</th>
 									@if($enable_expiry == 1 && $product->enable_stock == 1)
-										<th>Exp. Date</th>
+										<th style="min-width: 200px;">Exp. Date</th>
 									@endif
 									@if($enable_lot == 1)
-										<th>@lang( 'lang_v1.lot_number' )</th>
+										<th style="min-width: 200px;">@lang( 'lang_v1.lot_number' )</th>
 									@endif
-									<th>@lang( 'purchase.subtotal_before_tax' )</th>
-									<th>@lang( 'lang_v1.date' )</th>
-									<th>@lang( 'brand.note' )</th>
-									<th>&nbsp;</th>
+									<th style="min-width: 200px;">@lang( 'purchase.subtotal_before_tax' )</th>
+									<th style="min-width: 200px;">@lang( 'lang_v1.date' )</th>
+									<th style="min-width: 200px;">@lang( 'brand.note' )</th>
+									<th style="min-width: 200px;">&nbsp;</th>
 								</tr>
 								</thead>
 								<tbody>

@@ -31,7 +31,7 @@
                         <div class="col-sm-6">
                           {!! Form::label('single_dpp_inc_tax', trans('product.inc_of_tax') . ':*') !!}
                         
-                          {!! Form::text('single_dpp_inc_tax', @num_format($variation->dpp_inc_tax), ['class' => 'form-control input-sm dpp_inc_tax input_number', 'placeholder' => __('product.inc_of_tax'), 'required']); !!}
+                          {!! Form::text('single_dpp_inc_tax', @num_format($variation->dpp_inc_tax), ['class' => 'form-control input-sm dpp_inc_tax input_number', 'placeholder' => __('product.inc_of_tax'), 'required', 'readonly' => true]); !!}
                         </div>
                     </td>
 
