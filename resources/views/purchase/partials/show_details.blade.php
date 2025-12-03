@@ -43,7 +43,7 @@
       <address>
         <strong>{{ $purchase->business->name }}</strong>
         {{ $purchase->location->name }}
-        @if(!empty($purchase->location->landmark))
+        @if(!empty($purchase->location->landmark) && false)
           <br>{{$purchase->location->landmark}}
         @endif
         @if(!empty($purchase->location->city) || !empty($purchase->location->state) || !empty($purchase->location->country))

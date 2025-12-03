@@ -16,7 +16,7 @@
               {!! Form::text('name', $location->name, ['class' => 'form-control', 'required', 'placeholder' => __( 'invoice.name' ) ]); !!}
           </div>
         </div>
-        <div class="col-sm-12">
+        <div class="col-sm-12" style="display: none;">
           <div class="form-group">
             {!! Form::label('landmark', __( 'business.landmark' ) . ':') !!}
               {!! Form::text('landmark', $location->landmark, ['class' => 'form-control', 'placeholder' => __( 'business.landmark' ) ]); !!}
