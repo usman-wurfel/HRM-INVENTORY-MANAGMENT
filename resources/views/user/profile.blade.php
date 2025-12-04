@@ -139,7 +139,6 @@
         @endcomponent
     </div>
 </div>
-{!! Form::close() !!}
 
 @if(!empty($user) && $user->documentsAndnote && $user->documentsAndnote->count() > 0)
 <div class="row mt-3">
@@ -192,13 +191,14 @@
 </div>
 @endif
 
-@include('user.edit_profile_form_part', ['bank_details' => !empty($user->bank_details) ? json_decode($user->bank_details, true) : null])
+@include('user.edit_profile_form_part', ['user' => $user, 'bank_details' => !empty($user->bank_details) ? json_decode($user->bank_details, true) : null])
 
 <div class="row">
     <div class="col-md-12 text-center">
-        <button type="submit" form="edit_user_profile_form" class="tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-lg">@lang('messages.update')</button>
+        <button type="submit" class="tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-lg">@lang('messages.update')</button>
     </div>
 </div>
+{!! Form::close() !!}
 
 </section>
 <!-- /.content -->
