@@ -215,18 +215,39 @@ class DashboardController extends Controller
 
         $target_achieved_last_month = !empty($settings['calculate_sales_target_commission_without_tax']) && $settings['calculate_sales_target_commission_without_tax'] == 1 ? $sale_totals['total_sales_without_tax'] : $sale_totals['total_sales'];
 
-        // Get the current date and time
-        $now = \Carbon::now()->addDays(1)->format('Y-m-d');
-
-        // Calculate the date 30 days from now
-        $thirtyDaysFromNow = \Carbon::now()->addDays(30)->format('Y-m-d');
-
-        // Retrieve all users with a date of birth within the next 30 days
-        $up_comming_births = User::where('business_id', $business_id)->whereRaw("DATE_FORMAT(dob, '%m-%d') BETWEEN DATE_FORMAT('$now', '%m-%d') AND DATE_FORMAT('$thirtyDaysFromNow', '%m-%d')")->orderBy('dob', 'asc')->get();
+        // Get today's birthdays
+        $today_births = User::where('business_id', $business_id)
+            ->whereNotNull('dob')
+            ->whereMonth('dob', \Carbon::now()->format('m'))
+            ->whereDay('dob', \Carbon::now()->format('d'))
+            ->get();
         
-        $today_births = User::whereMonth('dob', \Carbon::now()->format('m'))
-        ->whereDay('dob', \Carbon::now()->format('d'))
-        ->get();
+        // Get upcoming birthdays (next 30 days, excluding today)
+        $today = \Carbon::now();
+        $today_md = $today->format('m-d');
+        $thirty_days_later = $today->copy()->addDays(30);
+        $end_md = $thirty_days_later->format('m-d');
+        
+        // Use DATE_FORMAT to compare month-day, handling year rollover
+        if ($end_md >= $today_md) {
+            // Normal case: within same year (e.g., Jan 15 to Feb 15)
+            $up_comming_births = User::where('business_id', $business_id)
+                ->whereNotNull('dob')
+                ->whereRaw("DATE_FORMAT(dob, '%m-%d') > ?", [$today_md])
+                ->whereRaw("DATE_FORMAT(dob, '%m-%d') <= ?", [$end_md])
+                ->orderByRaw("MONTH(dob), DAY(dob)")
+                ->get();
+        } else {
+            // Year rollover case: from today to end of year, then from start of year to end date
+            $up_comming_births = User::where('business_id', $business_id)
+                ->whereNotNull('dob')
+                ->where(function($query) use ($today_md, $end_md) {
+                    $query->whereRaw("DATE_FORMAT(dob, '%m-%d') > ?", [$today_md])
+                          ->orWhereRaw("DATE_FORMAT(dob, '%m-%d') <= ?", [$end_md]);
+                })
+                ->orderByRaw("CASE WHEN DATE_FORMAT(dob, '%m-%d') > ? THEN 0 ELSE 1 END, MONTH(dob), DAY(dob)", [$today_md])
+                ->get();
+        }
 
         return view('essentials::dashboard.hrm_dashboard')
             ->with(compact('users', 'departments', 'users_by_dept', 'todays_holidays', 'todays_leaves', 'upcoming_leaves', 'is_admin', 'users_leaves', 'upcoming_holidays', 'todays_attendances', 'sales_targets', 'target_achieved_this_month', 'target_achieved_last_month', 'up_comming_births', 'today_births'));
