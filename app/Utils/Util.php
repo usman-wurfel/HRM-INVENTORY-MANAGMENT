@@ -166,20 +166,21 @@ class Util
         $payment_types['custom_pay_7'] = ! empty($custom_labels['payments']['custom_pay_7']) ? $custom_labels['payments']['custom_pay_7'] : __('lang_v1.custom_payment', ['number' => 7]);
 
         //Unset payment types if not enabled in business location
-        if (! empty($location)) {
-            $location_account_settings = ! empty($location->default_payment_accounts) ? json_decode($location->default_payment_accounts, true) : [];
-            $enabled_accounts = [];
-            foreach ($location_account_settings as $key => $value) {
-                if (! empty($value['is_enabled'])) {
-                    $enabled_accounts[] = $key;
-                }
-            }
-            foreach ($payment_types as $key => $value) {
-                if (! in_array($key, $enabled_accounts)) {
-                    unset($payment_types[$key]);
-                }
-            }
-        }
+        // Commented out to show all payment methods in Add Payment modal
+        // if (! empty($location)) {
+        //     $location_account_settings = ! empty($location->default_payment_accounts) ? json_decode($location->default_payment_accounts, true) : [];
+        //     $enabled_accounts = [];
+        //     foreach ($location_account_settings as $key => $value) {
+        //         if (! empty($value['is_enabled'])) {
+        //             $enabled_accounts[] = $key;
+        //         }
+        //     }
+        //     foreach ($payment_types as $key => $value) {
+        //         if (! in_array($key, $enabled_accounts)) {
+        //             unset($payment_types[$key]);
+        //         }
+        //     }
+        // }
 
         if ($show_advance) {
             $payment_types = ['advance' => __('lang_v1.advance')] + $payment_types;
