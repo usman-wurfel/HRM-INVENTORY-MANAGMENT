@@ -444,11 +444,11 @@
 
 		function set_payment_type_dropdown() {
 			// Always show all payment types - no filtering based on location
-			$(".payment_types_dropdown > option").each(function() {
+				$(".payment_types_dropdown > option").each(function() {
 				if ($(this).val()) {
 					$(this).removeClass('hide').prop('disabled', false).show();
-				}
-			});
+					}
+				});
 		}
 	</script>
 	@include('purchase.partials.keyboard_shortcuts')

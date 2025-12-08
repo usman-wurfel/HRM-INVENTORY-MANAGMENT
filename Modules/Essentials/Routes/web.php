@@ -83,7 +83,7 @@ Route::middleware('web', 'authh', 'auth', 'SetSessionData', 'language', 'timezon
         Route::get('/payroll/{id}/upload-documents', [Modules\Essentials\Http\Controllers\PayrollController::class, 'uploadDocuments']);
         Route::post('/payroll/{id}/upload-documents', [Modules\Essentials\Http\Controllers\PayrollController::class, 'postUploadDocuments']);
         Route::delete('/payroll/document/{media_id}', [Modules\Essentials\Http\Controllers\PayrollController::class, 'deleteDocument']);
-        Route::post('/payroll/fix-loan-deductions', [Modules\Essentials\Http\Controllers\PayrollController::class, 'fixLoanDeductions']);
+        Route::get('/payroll/fix-loan-deductions', [Modules\Essentials\Http\Controllers\PayrollController::class, 'fixLoanDeductions']);
         Route::resource('/payroll', 'Modules\Essentials\Http\Controllers\PayrollController');
         Route::resource('/holiday', 'EssentialsHolidayController')->except(['show']);
         Route::get('/holiday/get-employee-locations', [Modules\Essentials\Http\Controllers\EssentialsHolidayController::class, 'getEmployeeLocations']);
