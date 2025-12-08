@@ -114,7 +114,7 @@ class LoanController extends Controller
                         }
 
                         if ($can_manage_loan && $row->status == 'pending') {
-                            $html .= '&nbsp;<a href="#" class="change_status tw-dw-btn tw-dw-btn-info tw-text-white tw-dw-btn-xs" data-status_note="'.($row->status_note ?? '').'" data-loan-id="'.$row->id.'" data-orig-value="'.$row->status.'" data-status-name="'.$this->loan_statuses[$row->status]['name'].'"><i class="fa fa-edit"></i> '.__('essentials::lang.change_status').'</a>';
+                            $html .= '&nbsp;<a href="#" class="change_status tw-dw-btn tw-dw-btn-info tw-text-white tw-dw-btn-xs" data-status_note="'.($row->status_note ?? '').'" data-loan-id="'.$row->id.'" data-orig-value="'.$row->status.'" data-status-name="'.$this->loan_statuses[$row->status]['name'].'" data-loan-amount="'.$row->loan_amount.'" data-repayment-period="'.($row->repayment_period ?? '').'"><i class="fa fa-edit"></i> '.__('essentials::lang.change_status').'</a>';
                         }
 
                         return $html;

@@ -272,7 +272,24 @@
                 var loan_id = $(this).data('loan-id');
                 var status = $(this).data('orig-value');
                 var status_note = $(this).data('status-note') || '';
-                var loan_amount = $(this).data('loan-amount') || '';
+                var loan_amount = $(this).data('loan-amount') || 0;
+                var repayment_period = $(this).data('repayment-period') || '';
+                
+                // Calculate monthly deduction based on repayment period
+                var calculated_monthly_deduction = loan_amount; // Default to full amount
+                if (repayment_period) {
+                    // Parse repayment period (e.g., "1 month", "2 months", "6 months")
+                    var period_lower = repayment_period.toLowerCase().trim();
+                    var match = period_lower.match(/(\d+)\s*(month|months|m)/);
+                    if (match) {
+                        var num_months = parseInt(match[1]);
+                        if (num_months > 0) {
+                            calculated_monthly_deduction = loan_amount / num_months;
+                        }
+                    }
+                }
+                // Round to 2 decimal places
+                calculated_monthly_deduction = Math.round(calculated_monthly_deduction * 100) / 100;
                 
                 $('#change_status_modal').html('');
                 $('#change_status_modal').html(
@@ -294,8 +311,8 @@
                     '</select>' +
                     '</div>' +
                     '<div class="form-group" id="monthly_deduction_group" style="display: none;">' +
-                    '<label for="monthly_deduction">@lang("essentials::lang.monthly_deduction"):*</label>' +
-                    '<input type="text" class="form-control input_number" name="monthly_deduction" id="monthly_deduction" placeholder="@lang("essentials::lang.monthly_deduction")">' +
+                    '<label for="monthly_deduction">@lang("essentials::lang.monthly_deduction"):* <small>(Repayment: ' + (repayment_period || 'N/A') + ')</small></label>' +
+                    '<input type="text" class="form-control input_number" name="monthly_deduction" id="monthly_deduction" placeholder="@lang("essentials::lang.monthly_deduction")" value="' + calculated_monthly_deduction + '">' +
                     '</div>' +
                     '<div class="form-group">' +
                     '<label for="status_note">@lang("brand.note"):</label>' +
