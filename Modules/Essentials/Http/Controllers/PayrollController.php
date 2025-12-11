@@ -1516,8 +1516,19 @@ class PayrollController extends Controller
 
                 // Check each deduction
                 foreach ($deductions['deduction_names'] as $index => $deduction_name) {
-                    // Check if this deduction is for a loan
-                    if (strpos($deduction_name, __('essentials::lang.loan')) === false) {
+                    // Check if this deduction is for a loan (check multiple patterns)
+                    $is_loan_deduction = false;
+                    $deduction_name_lower = strtolower($deduction_name);
+                    
+                    // Check for various loan patterns
+                    if (strpos($deduction_name, __('essentials::lang.loan')) !== false ||
+                        strpos($deduction_name_lower, 'loan') !== false ||
+                        strpos($deduction_name_lower, 'empréstimo') !== false || // Portuguese
+                        preg_match('/\(L\d+\)/', $deduction_name)) { // Pattern like (L001)
+                        $is_loan_deduction = true;
+                    }
+                    
+                    if (!$is_loan_deduction) {
                         continue;
                     }
 
@@ -1593,9 +1604,23 @@ class PayrollController extends Controller
 
             DB::commit();
 
+            // Build detailed message
+            $details = "Total Payrolls: " . count($payrolls) . ", ";
+            $details .= "Fixed: {$fixed_count} deductions, ";
+            $details .= "Skipped: {$skipped_count} deductions, ";
+            $details .= "Updated: " . count($loan_deductions) . " loans. ";
+            
+            // Show updated loans details
+            if (!empty($loan_deductions)) {
+                $details .= "Loans updated: ";
+                foreach ($loan_deductions as $lid => $amount) {
+                    $details .= "ID:{$lid}=€{$amount}, ";
+                }
+            }
+            
             $output = [
                 'success' => true,
-                'msg' => "Loan deductions fixed successfully. Fixed: {$fixed_count} deductions, Skipped: {$skipped_count} deductions, Updated: " . count($loan_deductions) . " loans.",
+                'msg' => "Loan deductions fixed successfully. " . $details,
             ];
         } catch (\Exception $e) {
             DB::rollBack();

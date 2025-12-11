@@ -324,8 +324,24 @@
   <script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>
   <script type="text/javascript">
     $(document).ready( function(){
+      // Store original final_total to prevent auto-recalculation on page load
+      var original_final_total = __read_number($('input#grand_total_hidden'), true);
+      
+      // Update table totals for display only
       update_table_total();
-      update_grand_total();
+      
+      // Restore original final_total (don't let update_grand_total overwrite it)
+      __write_number($('input#grand_total_hidden'), original_final_total, true);
+      
+      // Update display with original value
+      if ($('#grand_total').length > 0) {
+        $('#grand_total').text(__currency_trans_from_en(original_final_total, true, true));
+      }
+      
+      var payment = __read_number($('input.payment-amount'), true);
+      var due = original_final_total - payment;
+      $('#payment_due').text(__currency_trans_from_en(due, true, true));
+      
       __page_leave_confirmation('#add_purchase_form');
     });
   </script>
