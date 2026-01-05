@@ -170,8 +170,8 @@ class Contact extends Authenticatable
     public static function suppliersDropdown($business_id, $prepend_none = true, $append_id = true)
     {
         $all_contacts = Contact::where('contacts.business_id', $business_id)
-                        ->whereIn('contacts.type', ['supplier', 'both'])
-                        ->active();
+                        ->active()
+                        ->onlySuppliers();
 
         if ($append_id) {
             $all_contacts->select(
@@ -183,10 +183,6 @@ class Contact extends Authenticatable
                 'contacts.id',
                 DB::raw("CONCAT(contacts.name, ' (', contacts.supplier_business_name, ')') as supplier")
                 );
-        }
-
-        if (auth()->check() && ! auth()->user()->can('supplier.view') && auth()->user()->can('supplier.view_own')) {
-            $all_contacts->onlyOwnContact();
         }
 
         $suppliers = $all_contacts->pluck('supplier', 'id');
