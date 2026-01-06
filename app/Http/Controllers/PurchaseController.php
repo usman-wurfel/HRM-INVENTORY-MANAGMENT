@@ -224,17 +224,27 @@ class PurchaseController extends Controller
 
         $business_locations = BusinessLocation::forDropdown($business_id);
         
-        // Get all suppliers (matching contacts page listing) - not just those with purchases
-        $suppliers_query = Contact::where('contacts.business_id', $business_id)
-            ->whereIn('contacts.type', ['supplier', 'both'])
+        // Get suppliers from transactions (same as table query) - distinct suppliers that have purchases
+        $suppliers_query = Transaction::leftJoin('contacts', 'transactions.contact_id', '=', 'contacts.id')
+            ->where('transactions.business_id', $business_id)
+            ->where('transactions.type', 'purchase')
+            ->whereNotNull('contacts.id')
             ->select(
                 'contacts.id',
                 DB::raw("IF(contacts.contact_id IS NULL OR contacts.contact_id='', contacts.name, CONCAT(contacts.name, ' - ', COALESCE(contacts.supplier_business_name, ''), '(', contacts.contact_id, ')')) AS supplier")
             )
+            ->distinct()
             ->orderBy('contacts.name');
         
-        if (auth()->check() && ! auth()->user()->can('supplier.view') && auth()->user()->can('supplier.view_own')) {
-            $suppliers_query->onlyOwnContact();
+        // Apply location permissions if user has restricted access
+        $permitted_locations = auth()->user()->permitted_locations();
+        if ($permitted_locations != 'all') {
+            $suppliers_query->whereIn('transactions.location_id', $permitted_locations);
+        }
+        
+        // Apply purchase view permissions
+        if (! auth()->user()->can('purchase.view') && auth()->user()->can('view_own_purchase')) {
+            $suppliers_query->where('transactions.created_by', request()->session()->get('user.id'));
         }
         
         $suppliers = $suppliers_query->pluck('supplier', 'contacts.id');
