@@ -13,6 +13,10 @@
 <section class="content">
     <div class="print_section">
         <h2>{{ session()->get('business.name') }} - Cash In / Cash Out Report</h2>
+        <p><strong>Date Range:</strong> {{ @format_date($start_date) }} to {{ @format_date($end_date) }}</p>
+        @if(!empty($location_id) && isset($business_locations[$location_id]))
+        <p><strong>Location:</strong> {{ $business_locations[$location_id] }}</p>
+        @endif
     </div>
 
     <div class="row no-print">
@@ -155,6 +159,57 @@
 </section>
 <!-- /.content -->
 @stop
+
+@section('css')
+<style type="text/css">
+    /* Print styles */
+    .print_section {
+        display: none;
+    }
+    
+    @media print {
+        .print_section {
+            display: block !important;
+            margin-bottom: 20px;
+        }
+        
+        .no-print {
+            display: none !important;
+        }
+        
+        .content-wrapper {
+            border-left: none !important;
+        }
+        
+        .box-header {
+            border-bottom: 1px solid #ddd !important;
+        }
+        
+        .box-tools {
+            display: none !important;
+        }
+        
+        table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+        }
+        
+        table th,
+        table td {
+            border: 1px solid #ddd !important;
+            padding: 8px !important;
+        }
+        
+        .info-box {
+            page-break-inside: avoid;
+        }
+        
+        @page {
+            margin: 1cm;
+        }
+    }
+</style>
+@endsection
 
 @section('javascript')
 <script type="text/javascript">

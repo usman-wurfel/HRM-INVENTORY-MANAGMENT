@@ -231,7 +231,18 @@ class PurchaseController extends Controller
             ->onlySuppliers()
             ->select(
                 'contacts.id',
-                DB::raw("IF(contacts.contact_id IS NULL OR contacts.contact_id='', contacts.name, CONCAT(contacts.name, ' - ', COALESCE(contacts.supplier_business_name, ''), '(', contacts.contact_id, ')')) AS supplier")
+                DB::raw("
+                    IF(contacts.contact_id IS NULL OR contacts.contact_id='',
+                        IF(contacts.name IS NULL OR contacts.name='', 
+                            COALESCE(contacts.supplier_business_name, ''),
+                            contacts.name
+                        ),
+                        IF(contacts.name IS NULL OR contacts.name='',
+                            CONCAT(COALESCE(contacts.supplier_business_name, ''), ' (', contacts.contact_id, ')'),
+                            CONCAT(contacts.name, ' - ', COALESCE(contacts.supplier_business_name, ''), '(', contacts.contact_id, ')')
+                        )
+                    ) AS supplier
+                ")
             )
             ->groupBy('contacts.id')
             ->orderBy('contacts.name');

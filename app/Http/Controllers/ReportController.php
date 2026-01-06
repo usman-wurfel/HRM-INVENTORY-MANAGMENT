@@ -139,13 +139,13 @@ class ReportController extends Controller
 
         $permitted_locations = auth()->user()->permitted_locations();
 
-        // Get all transactions (sales, expenses, payments) for the date range
+        // Get all transactions (sales, purchases, expenses, payments) for the date range
         $query = Transaction::where('transactions.business_id', $business_id)
             ->leftJoin('contacts', 'transactions.contact_id', '=', 'contacts.id')
             ->leftJoin('business_locations as bl', 'transactions.location_id', '=', 'bl.id')
             ->leftJoin('users as u', 'transactions.created_by', '=', 'u.id')
             ->leftJoin('expense_categories as ec', 'transactions.expense_category_id', '=', 'ec.id')
-            ->whereIn('transactions.type', ['sell', 'expense', 'expense_refund'])
+            ->whereIn('transactions.type', ['sell', 'purchase', 'expense', 'expense_refund'])
             ->whereDate('transactions.transaction_date', '>=', $start_date)
             ->whereDate('transactions.transaction_date', '<=', $end_date)
             ->select(
@@ -191,6 +191,13 @@ class ReportController extends Controller
                     ->sum('amount');
                 $cash_in = $paid_amount;
                 $total_cash_in += $cash_in;
+            } elseif ($transaction->type == 'purchase' && $transaction->payment_status != 'due') {
+                // Get actual paid amount for purchases (cash out)
+                $paid_amount = \App\TransactionPayment::where('transaction_id', $transaction->id)
+                    ->where('is_return', 0)
+                    ->sum('amount');
+                $cash_out = $paid_amount;
+                $total_cash_out += $cash_out;
             } elseif ($transaction->type == 'expense') {
                 // Get actual paid amount for expenses
                 $paid_amount = \App\TransactionPayment::where('transaction_id', $transaction->id)
@@ -215,7 +222,7 @@ class ReportController extends Controller
                     'remark' => $transaction->additional_notes ?? '',
                     'entry_by' => $transaction->entry_by,
                     'contact' => $transaction->contact_name ?? '',
-                    'category' => $transaction->category_name ?? ($transaction->type == 'sell' ? 'Sales' : ''),
+                    'category' => $transaction->category_name ?? ($transaction->type == 'sell' ? 'Sales' : ($transaction->type == 'purchase' ? 'Purchase' : '')),
                     'mode' => 'Cash',
                     'cash_in' => $cash_in,
                     'cash_out' => $cash_out,
