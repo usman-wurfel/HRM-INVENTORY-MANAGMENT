@@ -50,7 +50,7 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="row">
+    <div class="row no-print">
         <div class="col-md-4 col-sm-6 col-xs-12">
             <div class="info-box bg-aqua">
                 <span class="info-box-icon"><i class="fa fa-arrow-down"></i></span>
@@ -170,7 +170,18 @@
     @media print {
         .print_section {
             display: block !important;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
+            page-break-after: avoid;
+        }
+        
+        .print_section h2 {
+            margin: 0 0 5px 0 !important;
+            font-size: 16px !important;
+        }
+        
+        .print_section p {
+            margin: 0 0 10px 0 !important;
+            font-size: 12px !important;
         }
         
         .no-print {
@@ -181,31 +192,74 @@
             border-left: none !important;
         }
         
+        .content-header {
+            display: none !important;
+        }
+        
+        .box {
+            border: none !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+        }
+        
         .box-header {
             border-bottom: 1px solid #ddd !important;
+            padding: 5px 0 !important;
+            margin-bottom: 5px !important;
+        }
+        
+        .box-header h3 {
+            margin: 0 !important;
+            font-size: 12px !important;
         }
         
         .box-tools {
             display: none !important;
         }
         
+        .box-body {
+            padding: 0 !important;
+        }
+        
         table {
             border-collapse: collapse !important;
             width: 100% !important;
+            font-size: 10px !important;
+            margin: 0 !important;
         }
         
         table th,
         table td {
-            border: 1px solid #ddd !important;
-            padding: 8px !important;
+            border: 1px solid #000 !important;
+            padding: 4px !important;
+            text-align: left !important;
+        }
+        
+        table th {
+            background-color: #f0f0f0 !important;
+            font-weight: bold !important;
+        }
+        
+        table .text-right {
+            text-align: right !important;
         }
         
         .info-box {
-            page-break-inside: avoid;
+            display: none !important;
         }
         
         @page {
-            margin: 1cm;
+            margin: 0.5cm;
+            size: A4 landscape;
+        }
+        
+        body {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        html, body {
+            height: auto !important;
         }
     }
 </style>
