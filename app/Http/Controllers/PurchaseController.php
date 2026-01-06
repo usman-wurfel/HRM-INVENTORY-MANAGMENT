@@ -224,16 +224,13 @@ class PurchaseController extends Controller
 
         $business_locations = BusinessLocation::forDropdown($business_id);
         
-        // Get suppliers from purchases to match what's shown in the table
-        $suppliers_query = Contact::join('transactions', 'contacts.id', '=', 'transactions.contact_id')
-            ->where('transactions.business_id', $business_id)
-            ->where('transactions.type', 'purchase')
+        // Get all suppliers (matching contacts page listing) - not just those with purchases
+        $suppliers_query = Contact::where('contacts.business_id', $business_id)
             ->whereIn('contacts.type', ['supplier', 'both'])
             ->select(
                 'contacts.id',
                 DB::raw("IF(contacts.contact_id IS NULL OR contacts.contact_id='', contacts.name, CONCAT(contacts.name, ' - ', COALESCE(contacts.supplier_business_name, ''), '(', contacts.contact_id, ')')) AS supplier")
             )
-            ->distinct()
             ->orderBy('contacts.name');
         
         if (auth()->check() && ! auth()->user()->can('supplier.view') && auth()->user()->can('supplier.view_own')) {
