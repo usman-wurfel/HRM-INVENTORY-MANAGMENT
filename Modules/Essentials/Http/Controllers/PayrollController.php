@@ -591,6 +591,14 @@ class PayrollController extends Controller
         
         // Calculate net pay (should match final_total, but calculate for accuracy)
         $calculated_net_pay = $total_earnings - $total_deduction;
+        
+        // Update database final_total if it doesn't match calculated value
+        if (abs($payroll->final_total - $calculated_net_pay) > 0.01) {
+            $payroll->final_total = $calculated_net_pay;
+            $payroll->total_before_tax = $calculated_net_pay;
+            $payroll->save();
+        }
+        
         $final_total_in_words = $this->commonUtil->numToIndianFormat($calculated_net_pay);
 
         $start_of_month = \Carbon::parse($payroll->transaction_date);
