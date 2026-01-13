@@ -324,6 +324,28 @@
   <script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>
   <script type="text/javascript">
     $(document).ready( function(){
+      // Ensure all row subtotals are properly calculated on page load
+      $('#purchase_entry_table tbody tr').each(function() {
+        var row = $(this);
+        var quantity = __read_number(row.find('.purchase_quantity'), true) || 0;
+        var purchase_price_inc_tax = __read_number(row.find('.purchase_unit_cost_after_tax'), true) || 0;
+        var purchase_price_before_tax = __read_number(row.find('input.purchase_unit_cost'), true) || 0;
+        
+        // Calculate and update subtotal before tax
+        if (quantity > 0 && purchase_price_before_tax > 0) {
+          var subtotal_before_tax = quantity * purchase_price_before_tax;
+          __write_number(row.find('.row_subtotal_before_tax_hidden'), subtotal_before_tax, true);
+          row.find('.row_subtotal_before_tax').text(__currency_trans_from_en(subtotal_before_tax, true, true));
+        }
+        
+        // Calculate and update subtotal after tax
+        if (quantity > 0 && purchase_price_inc_tax > 0) {
+          var subtotal_after_tax = quantity * purchase_price_inc_tax;
+          __write_number(row.find('.row_subtotal_after_tax_hidden'), subtotal_after_tax, true);
+          row.find('.row_subtotal_after_tax').text(__currency_trans_from_en(subtotal_after_tax, true, true));
+        }
+      });
+      
       // Store original final_total to prevent auto-recalculation on page load
       var original_final_total = __read_number($('input#grand_total_hidden'), true);
       

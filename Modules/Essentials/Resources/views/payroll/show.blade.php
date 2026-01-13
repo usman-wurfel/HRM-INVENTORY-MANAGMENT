@@ -234,8 +234,12 @@
 					<tr>
 						<td colspan="3" style="text-align: right;">
 							<div style="width: 43% !important;float: right;padding-right: 49px">
+								@php
+									// Calculate net pay from view's calculated totals (more accurate)
+									$view_calculated_net_pay = $total_earnings - $total_deduction;
+								@endphp
 								<span class="display_currency" data-currency_symbol="true">
-									{{$total_earnings - $total_deduction}}
+									{{$view_calculated_net_pay}}
 								</span>
 							</div>
 							<div style="width: 57% !important;">
@@ -247,7 +251,13 @@
 					</tr>
 					<tr>
 						<td colspan="3">
-							<strong>@lang('essentials::lang.in_words'):</strong> {{ucfirst($final_total_in_words)}}
+							@php
+								// Use view's calculated net pay for words conversion
+								// Create Util instance to call numToIndianFormat
+								$util = new \App\Utils\Util();
+								$net_pay_in_words = $util->numToIndianFormat($view_calculated_net_pay);
+							@endphp
+							<strong>@lang('essentials::lang.in_words'):</strong> {{ucfirst($net_pay_in_words)}}
 						</td>
 					</tr>
 					<tr>

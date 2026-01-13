@@ -70,7 +70,9 @@ function calculateTotal() {
     $('#total_deductions').text(__currency_trans_from_en(total_deduction, true));
 
     var gross_amount = total + total_allowance - total_deduction;
-    $('#gross_amount').val(gross_amount);
+    // Store unformatted value in hidden input for form submission
+    $('#gross_amount').val(gross_amount.toFixed(2));
+    // Display formatted value for user
     $('#gross_amount_text').text(__currency_trans_from_en(gross_amount, true));
 }
 

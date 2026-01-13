@@ -643,7 +643,7 @@ $(document).ready(function() {
             var total_purchase_return_due = 0;
             for (var r in data){
                 // Try to get final_total from raw column first, otherwise parse HTML
-                if (data[r].final_total_raw !== undefined) {
+                if (data[r].final_total_raw !== undefined && data[r].final_total_raw !== null) {
                     total_purchase += parseFloat(data[r].final_total_raw) || 0;
                 } else if (data[r].final_total) {
                     var final_total_obj = $('<div>' + data[r].final_total + '</div>');
@@ -654,6 +654,12 @@ $(document).ready(function() {
                     }
                     if (final_total_value) {
                         total_purchase += parseFloat(final_total_value) || 0;
+                    } else {
+                        // Fallback: try to extract number from text content
+                        var text_value = final_total_span.text().replace(/[^\d.-]/g, '');
+                        if (text_value) {
+                            total_purchase += parseFloat(text_value) || 0;
+                        }
                     }
                 }
                 
@@ -1016,16 +1022,41 @@ function update_table_total() {
     $('#purchase_entry_table tbody')
         .find('tr')
         .each(function() {
-            total_quantity += __read_number($(this).find('.purchase_quantity'), true);
-            total_st_before_tax += __read_number(
-                $(this).find('.row_subtotal_before_tax_hidden'),
-                true
-            );
-            total_subtotal += __read_number($(this).find('.row_subtotal_after_tax_hidden'), true);
+            var quantity = __read_number($(this).find('.purchase_quantity'), true);
+            total_quantity += quantity || 0;
+            
+            // Calculate subtotal before tax from visible input fields for accuracy
+            var purchase_price_before_tax = __read_number($(this).find('input.purchase_unit_cost'), true);
+            var qty = __read_number($(this).find('.purchase_quantity'), true);
+            
+            var subtotal_before_tax = 0;
+            if (purchase_price_before_tax && qty) {
+                // Calculate from visible fields
+                subtotal_before_tax = purchase_price_before_tax * qty;
+            } else {
+                // Fallback to hidden field if visible fields not available
+                subtotal_before_tax = __read_number(
+                    $(this).find('.row_subtotal_before_tax_hidden'),
+                    true
+                ) || 0;
+            }
+            total_st_before_tax += subtotal_before_tax;
+            
+            // Calculate subtotal after tax from visible input fields
+            var purchase_price_inc_tax = __read_number($(this).find('.purchase_unit_cost_after_tax'), true);
+            var subtotal_after_tax = 0;
+            if (purchase_price_inc_tax && qty) {
+                // Calculate from visible fields
+                subtotal_after_tax = purchase_price_inc_tax * qty;
+            } else {
+                // Fallback to hidden field
+                subtotal_after_tax = __read_number($(this).find('.row_subtotal_after_tax_hidden'), true) || 0;
+            }
+            total_subtotal += subtotal_after_tax;
             
             // Calculate tax for this line
             // item_tax is already the total tax for the line (not per unit)
-            var line_tax = __read_number($(this).find('input.purchase_product_unit_tax'), true);
+            var line_tax = __read_number($(this).find('input.purchase_product_unit_tax'), true) || 0;
             total_tax += line_tax;
         });
 
@@ -1033,8 +1064,10 @@ function update_table_total() {
     $('#total_st_before_tax').text(__currency_trans_from_en(total_st_before_tax, true, true));
     __write_number($('input#st_before_tax_input'), total_st_before_tax, true);
 
-    $('#total_subtotal').text(__currency_trans_from_en(total_subtotal, true, true));
-    __write_number($('input#total_subtotal_input'), total_subtotal, true);
+    // Net Total Amount = total_before_tax + tax (total including tax)
+    var net_total_with_tax = total_st_before_tax + total_tax;
+    $('#total_subtotal').text(__currency_trans_from_en(net_total_with_tax, true, true));
+    __write_number($('input#total_subtotal_input'), net_total_with_tax, true);
     
     $('#total_tax_amount').text(__currency_trans_from_en(total_tax, true, true));
     __write_number($('input#total_tax_amount_input'), total_tax, true);

@@ -400,6 +400,8 @@ class PayrollController extends Controller
                 $payroll['type'] = 'payroll';
                 $payroll['payment_status'] = 'due';
                 $payroll['status'] = 'final';
+                // Unformat final_total before saving
+                $payroll['final_total'] = $this->transactionUtil->num_uf($payroll['final_total']);
                 $payroll['total_before_tax'] = $payroll['final_total'];
                 $payroll['essentials_amount_per_unit_duration'] = $this->moduleUtil->num_uf($payroll['essentials_amount_per_unit_duration']);
 
@@ -571,7 +573,25 @@ class PayrollController extends Controller
         $deductions = ! empty($payroll->essentials_deductions) ? json_decode($payroll->essentials_deductions, true) : [];
         $bank_details = json_decode($payroll->transaction_for->bank_details, true);
         $payment_types = $this->moduleUtil->payment_types();
-        $final_total_in_words = $this->commonUtil->numToIndianFormat($payroll->final_total);
+        
+        // Calculate total earnings and deductions for accurate net pay
+        $total_earnings = $payroll->essentials_duration * $payroll->essentials_amount_per_unit_duration;
+        if (!empty($allowances['allowance_amounts'])) {
+            foreach ($allowances['allowance_amounts'] as $amount) {
+                $total_earnings += !empty($amount) ? $amount : 0;
+            }
+        }
+        
+        $total_deduction = 0;
+        if (!empty($deductions['deduction_amounts'])) {
+            foreach ($deductions['deduction_amounts'] as $amount) {
+                $total_deduction += !empty($amount) ? $amount : 0;
+            }
+        }
+        
+        // Calculate net pay (should match final_total, but calculate for accuracy)
+        $calculated_net_pay = $total_earnings - $total_deduction;
+        $final_total_in_words = $this->commonUtil->numToIndianFormat($calculated_net_pay);
 
         $start_of_month = \Carbon::parse($payroll->transaction_date);
         $end_of_month = \Carbon::parse($payroll->transaction_date)->endOfMonth();
@@ -607,7 +627,7 @@ class PayrollController extends Controller
         return view('essentials::payroll.show')
         ->with(compact('payroll', 'month_name', 'allowances', 'deductions', 'year', 'payment_types',
         'bank_details', 'designation', 'department', 'final_total_in_words', 'total_leaves', 'days_in_a_month',
-        'total_work_duration', 'location', 'total_days_present'));
+        'total_work_duration', 'location', 'total_days_present', 'calculated_net_pay', 'total_earnings', 'total_deduction'));
     }
 
     /**
@@ -655,6 +675,8 @@ class PayrollController extends Controller
             $input = $request->only(['essentials_duration', 'essentials_amount_per_unit_duration', 'final_total', 'essentials_duration_unit']);
 
             $input['essentials_amount_per_unit_duration'] = $this->moduleUtil->num_uf($input['essentials_amount_per_unit_duration']);
+            // Unformat final_total before saving
+            $input['final_total'] = $this->transactionUtil->num_uf($input['final_total']);
             $input['total_before_tax'] = $input['final_total'];
 
             //get pay componentes
@@ -667,7 +689,8 @@ class PayrollController extends Controller
             $payroll['deduction_percent'] = $request->input('deduction_percent');
             $payroll['deduction_amounts'] = $request->input('deduction_amounts');
             $payroll['deduction_loan_ids'] = $request->input('deduction_loan_ids');
-            $payroll['final_total'] = $request->input('final_total');
+            // Use already unformatted final_total from $input
+            $payroll['final_total'] = $input['final_total'];
 
             $allowances_and_deductions = $this->getAllowanceAndDeductionJson($payroll);
             $input['essentials_allowances'] = $allowances_and_deductions['essentials_allowances'];
