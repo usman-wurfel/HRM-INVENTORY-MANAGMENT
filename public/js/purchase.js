@@ -1064,10 +1064,10 @@ function update_table_total() {
     $('#total_st_before_tax').text(__currency_trans_from_en(total_st_before_tax, true, true));
     __write_number($('input#st_before_tax_input'), total_st_before_tax, true);
 
-    // Net Total Amount = total_before_tax + tax (total including tax)
-    var net_total_with_tax = total_st_before_tax + total_tax;
-    $('#total_subtotal').text(__currency_trans_from_en(net_total_with_tax, true, true));
-    __write_number($('input#total_subtotal_input'), net_total_with_tax, true);
+    // Sub Total Amount = total_before_tax (products total without tax)
+    // This shows the sum of all products before tax
+    $('#total_subtotal').text(__currency_trans_from_en(total_st_before_tax, true, true));
+    __write_number($('input#total_subtotal_input'), total_st_before_tax, true);
     
     $('#total_tax_amount').text(__currency_trans_from_en(total_tax, true, true));
     __write_number($('input#total_tax_amount_input'), total_tax, true);
@@ -1085,9 +1085,11 @@ function update_grand_total() {
         $('#discount_calculated_amount').text(__currency_trans_from_en(discount, true, true));
     }
 
-    //Calculate Tax (fields removed, default to 0)
-    var tax = 0;
-    if ($('#tax_id').length > 0) {
+    //Calculate Tax - Use total tax from product lines (already calculated in update_table_total)
+    var tax = __read_number($('input#total_tax_amount_input'), true) || 0;
+    
+    // Legacy tax calculation (if tax_id field exists, but we prefer line taxes)
+    if ($('#tax_id').length > 0 && $('#tax_id').val() && tax === 0) {
         var tax_rate = parseFloat($('option:selected', $('#tax_id')).data('tax_amount')) || 0;
         tax = __calculate_amount('percentage', tax_rate, total_subtotal - discount);
         if ($('input#tax_amount').length > 0) {

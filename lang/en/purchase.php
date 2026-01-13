@@ -45,6 +45,7 @@ return [
     'unit_selling_price' => 'Unit Selling Price',
     'total_before_tax' => 'Total Before Tax',
     'net_total_amount' => 'Net Total Amount',
+    'subtotal_amount' => 'Sub Total Amount',
     'discount_type' => 'Discount Type',
     'discount_amount' => 'Discount Amount',
     'discount' => 'Discount',

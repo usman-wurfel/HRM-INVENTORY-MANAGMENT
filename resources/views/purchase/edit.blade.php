@@ -279,10 +279,10 @@
                     </td>
                   </tr>
                   <tr>
-                    <th class="col-md-7 text-right">@lang( 'purchase.net_total_amount' ):</th>
+                    <th class="col-md-7 text-right">@lang( 'purchase.subtotal_amount' ):</th>
                     <td class="col-md-5 text-left">
                       <span id="total_subtotal" class="display_currency">{{$purchase->total_before_tax/$purchase->exchange_rate}}</span>
-                      <!-- This is total before purchase tax-->
+                      <!-- This is subtotal before purchase tax (products total without tax)-->
                       <input type="hidden" id="total_subtotal_input" value="{{$purchase->total_before_tax/$purchase->exchange_rate}}" name="total_before_tax">
                     </td>
                   </tr>
