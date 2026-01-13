@@ -286,6 +286,12 @@
                       <input type="hidden" id="total_subtotal_input" value="{{$purchase->total_before_tax/$purchase->exchange_rate}}" name="total_before_tax">
                     </td>
                   </tr>
+                  <tr>
+                    <th class="col-md-7 text-right"><strong>@lang( 'purchase.grand_total' ):</strong></th>
+                    <td class="col-md-5 text-left">
+                      <strong><span id="grand_total" class="display_currency">{{$purchase->final_total/$purchase->exchange_rate}}</span></strong>
+                    </td>
+                  </tr>
                   
                 </table>
               </div>
@@ -359,6 +365,16 @@
       if ($('#grand_total').length > 0) {
         $('#grand_total').text(__currency_trans_from_en(original_final_total, true, true));
       }
+      
+      // Update grand total when table totals change
+      $(document).on('change', '.purchase_quantity, .purchase_unit_cost, .purchase_unit_cost_after_tax, select.purchase_line_tax_id', function() {
+        setTimeout(function() {
+          var calculated_grand_total = __read_number($('input#grand_total_hidden'), true);
+          if ($('#grand_total').length > 0) {
+            $('#grand_total').text(__currency_trans_from_en(calculated_grand_total, true, true));
+          }
+        }, 100);
+      });
       
       var payment = __read_number($('input.payment-amount'), true);
       var due = original_final_total - payment;
