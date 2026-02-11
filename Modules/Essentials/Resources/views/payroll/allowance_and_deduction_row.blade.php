@@ -21,8 +21,9 @@
 <tr @if($is_readonly) class="loan-deduction-row" data-loan-id="{{$loan_id}}" @endif>
     <td>
         {!! Form::text($name_col . '[]', !empty($name) ? $name : null, ['class' => 'form-control input-sm' . ($is_readonly ? ' readonly' : ''), 'readonly' => $is_readonly ? 'readonly' : false]); !!}
-        @if($loan_id)
-            {!! Form::hidden('payrolls['.$employee.'][deduction_loan_ids][]', $loan_id); !!}
+        @if($type == 'deduction')
+            {{-- Always output one deduction_loan_ids[] per row so indices match deduction_names/deduction_amounts --}}
+            {!! Form::hidden('payrolls['.$employee.'][deduction_loan_ids][]', $loan_id ?? ''); !!}
         @endif
     </td>
     <td>

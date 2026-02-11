@@ -435,7 +435,8 @@ class PayrollController extends Controller
                                 
                                 if ($loan) {
                                     $deduction_amount = $this->moduleUtil->num_uf($payroll['deduction_amounts'][$index]);
-                                    $loan->total_deduction_paid = ($loan->total_deduction_paid ?? 0) + $deduction_amount;
+                                    $new_total = ($loan->total_deduction_paid ?? 0) + $deduction_amount;
+                                    $loan->total_deduction_paid = min($new_total, $loan->loan_amount);
                                     $loan->save();
                                 }
                             }
@@ -728,6 +729,7 @@ class PayrollController extends Controller
                             
                             if ($old_loan) {
                                 $old_loan->total_deduction_paid = max(0, ($old_loan->total_deduction_paid ?? 0) - $old_deduction_amount);
+                                $old_loan->total_deduction_paid = min($old_loan->total_deduction_paid, $old_loan->loan_amount);
                                 $old_loan->save();
                             }
                         }
@@ -752,7 +754,8 @@ class PayrollController extends Controller
                             
                             if ($loan) {
                                 $deduction_amount = $this->moduleUtil->num_uf($payroll['deduction_amounts'][$index]);
-                                $loan->total_deduction_paid = ($loan->total_deduction_paid ?? 0) + $deduction_amount;
+                                $new_total = ($loan->total_deduction_paid ?? 0) + $deduction_amount;
+                                $loan->total_deduction_paid = min($new_total, $loan->loan_amount);
                                 $loan->save();
                             }
                         }
@@ -1621,14 +1624,14 @@ class PayrollController extends Controller
                 }
             }
 
-            // Update all loans with the calculated total deductions
+            // Update all loans with the calculated total deductions (cap at loan_amount to avoid negative remaining)
             foreach ($loan_deductions as $loan_id => $total_deduction) {
                 $loan = EssentialsLoan::where('business_id', $business_id)
                     ->where('id', $loan_id)
                     ->first();
                 
                 if ($loan) {
-                    $loan->total_deduction_paid = $total_deduction;
+                    $loan->total_deduction_paid = min($total_deduction, $loan->loan_amount);
                     $loan->save();
                 }
             }

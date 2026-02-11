@@ -100,7 +100,8 @@
                         @endphp
                         @forelse($deductions['deduction_names'] as $key => $value)
                             @include('essentials::payroll.edit_allowance_and_deduction_row', ['add_button' => $loop->index == 0 ? true : false, 'type' => 'deduction', 'name' => $value, 'value' => $deductions['deduction_amounts'][$key], 
-                            'amount_type' => !empty($deductions['deduction_types'][$key]) ? $deductions['deduction_types'][$key] : 'fixed', 'percent' => !empty($deductions['deduction_percents'][$key]) ? $deductions['deduction_percents'][$key] : 0 ])
+                            'amount_type' => !empty($deductions['deduction_types'][$key]) ? $deductions['deduction_types'][$key] : 'fixed', 'percent' => !empty($deductions['deduction_percents'][$key]) ? $deductions['deduction_percents'][$key] : 0,
+                            'loan_id' => !empty($deductions['deduction_loan_ids'][$key]) ? $deductions['deduction_loan_ids'][$key] : ''])
 
                             @php
                                 $total_deductions += !empty($deductions['deduction_amounts'][$key]) ? $deductions['deduction_amounts'][$key] : 0;

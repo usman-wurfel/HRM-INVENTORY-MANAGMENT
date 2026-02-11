@@ -15,10 +15,15 @@
 
     $amount_type = !empty($amount_type) ? $amount_type : 'fixed';
     $percent = $amount_type == 'percent' && !empty($percent) ?  $percent : 0;
+    $loan_id = isset($loan_id) ? $loan_id : '';
 @endphp
 <tr>
     <td>
         {!! Form::text($name_col . '[]', !empty($name) ? $name : null, ['class' => 'form-control input-sm' ]); !!}
+        @if($type == 'deduction')
+            {{-- Keep deduction_loan_ids in same order as deduction_names for correct index mapping --}}
+            {!! Form::hidden('deduction_loan_ids[]', $loan_id); !!}
+        @endif
     </td>
     <td>
         {!! Form::select($type_col . '[]', ['fixed' => __('lang_v1.fixed'), 'percent' => __('lang_v1.percentage')], $amount_type, ['class' => 'form-control input-sm amount_type' ]); !!}
