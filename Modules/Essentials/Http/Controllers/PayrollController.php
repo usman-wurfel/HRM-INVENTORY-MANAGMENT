@@ -306,16 +306,17 @@ class PayrollController extends Controller
                     // }
                 }
 
-                //get loan deductions for employee - get ALL loans, not just first one
+                //get loan deductions for employee - only loans with remaining amount > 0 (exclude ended loans)
                 $loans = EssentialsLoan::where('business_id', $business_id)
                     ->where('user_id', $employee->id)
                     ->where('status', 'approved')
+                    ->whereRaw('(essentials_loans.loan_amount - COALESCE(essentials_loans.total_deduction_paid, 0)) > 0')
                     ->get();
 
-                // Add all loan deductions
+                // Add all loan deductions (only for loans with remaining > 0)
                 foreach ($loans as $loan) {
                     $remaining_loan = $loan->loan_amount - ($loan->total_deduction_paid ?? 0);
-                    if ($remaining_loan > 0) {
+                    if ($remaining_loan > 0.001) {
                         // Calculate monthly deduction based on repayment_period if available
                         $calculated_monthly_deduction = $loan->monthly_deduction ?? $loan->loan_amount;
                         
