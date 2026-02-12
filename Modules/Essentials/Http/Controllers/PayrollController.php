@@ -406,6 +406,33 @@ class PayrollController extends Controller
                 $payroll['total_before_tax'] = $payroll['final_total'];
                 $payroll['essentials_amount_per_unit_duration'] = $this->moduleUtil->num_uf($payroll['essentials_amount_per_unit_duration']);
 
+                // Auto-detect loan IDs from deduction names if missing (Smart Matching)
+                if (!empty($payroll['deduction_names']) && is_array($payroll['deduction_names'])) {
+                    $user_loans = null;
+                    foreach ($payroll['deduction_names'] as $index => $deduction_name) {
+                        $existing_id = !empty($payroll['deduction_loan_ids'][$index]) ? $payroll['deduction_loan_ids'][$index] : null;
+
+                        if (empty($existing_id) && !empty($deduction_name)) {
+                            // Fetch user loans cache if needed
+                            if (is_null($user_loans) && !empty($payroll['expense_for'])) {
+                                $user_loans = EssentialsLoan::where('business_id', $business_id)
+                                    ->where('user_id', $payroll['expense_for'])
+                                    ->get();
+                            }
+
+                            if ($user_loans) {
+                                foreach ($user_loans as $ul) {
+                                    // Check if ref_no exists in deduction name
+                                    if (!empty($ul->ref_no) && (stripos($deduction_name, $ul->ref_no) !== false)) {
+                                        $payroll['deduction_loan_ids'][$index] = $ul->id;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 $allowances_and_deductions = $this->getAllowanceAndDeductionJson($payroll);
                 $payroll['essentials_allowances'] = $allowances_and_deductions['essentials_allowances'];
                 $payroll['essentials_deductions'] = $allowances_and_deductions['essentials_deductions'];
@@ -424,22 +451,19 @@ class PayrollController extends Controller
                 // Update loan total_deduction_paid if loan deduction exists (before unset)
                 if (!empty($payroll['deduction_names']) && is_array($payroll['deduction_names'])) {
                     foreach ($payroll['deduction_names'] as $index => $deduction_name) {
-                        // Check if this deduction is for a loan
-                        if (strpos($deduction_name, __('essentials::lang.loan')) !== false) {
-                            // Get loan_id from deduction_loan_ids array at the same index
-                            $loan_id = !empty($payroll['deduction_loan_ids'][$index]) ? $payroll['deduction_loan_ids'][$index] : null;
+                        // Get loan_id from deduction_loan_ids array at the same index
+                        $loan_id = !empty($payroll['deduction_loan_ids'][$index]) ? $payroll['deduction_loan_ids'][$index] : null;
+                        
+                        if (!empty($loan_id) && isset($payroll['deduction_amounts'][$index])) {
+                            $loan = EssentialsLoan::where('business_id', $business_id)
+                                ->where('id', $loan_id)
+                                ->first();
                             
-                            if (!empty($loan_id) && isset($payroll['deduction_amounts'][$index])) {
-                                $loan = EssentialsLoan::where('business_id', $business_id)
-                                    ->where('id', $loan_id)
-                                    ->first();
-                                
-                                if ($loan) {
-                                    $deduction_amount = $this->moduleUtil->num_uf($payroll['deduction_amounts'][$index]);
-                                    $new_total = ($loan->total_deduction_paid ?? 0) + $deduction_amount;
-                                    $loan->total_deduction_paid = min($new_total, $loan->loan_amount);
-                                    $loan->save();
-                                }
+                            if ($loan) {
+                                $deduction_amount = $this->moduleUtil->num_uf($payroll['deduction_amounts'][$index]);
+                                $new_total = ($loan->total_deduction_paid ?? 0) + $deduction_amount;
+                                $loan->total_deduction_paid = min($new_total, $loan->loan_amount);
+                                $loan->save();
                             }
                         }
                     }
@@ -702,6 +726,34 @@ class PayrollController extends Controller
             // Use already unformatted final_total from $input
             $payroll['final_total'] = $input['final_total'];
 
+            // Auto-detect loan IDs from deduction names if missing (Smart Matching)
+            if (!empty($payroll['deduction_names']) && is_array($payroll['deduction_names'])) {
+                $user_loans = null;
+                $expense_for = $payroll_trans->expense_for ?? null; // Get user from existing transaction if possible
+                
+                foreach ($payroll['deduction_names'] as $index => $deduction_name) {
+                    $existing_id = !empty($payroll['deduction_loan_ids'][$index]) ? $payroll['deduction_loan_ids'][$index] : null;
+
+                    if (empty($existing_id) && !empty($deduction_name)) {
+                        // Fetch user loans cache if needed
+                        if (is_null($user_loans) && !empty($expense_for)) {
+                            $user_loans = EssentialsLoan::where('business_id', $business_id)
+                                ->where('user_id', $expense_for)
+                                ->get();
+                        }
+
+                        if ($user_loans) {
+                            foreach ($user_loans as $ul) {
+                                if (!empty($ul->ref_no) && (stripos($deduction_name, $ul->ref_no) !== false)) {
+                                    $payroll['deduction_loan_ids'][$index] = $ul->id;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             $allowances_and_deductions = $this->getAllowanceAndDeductionJson($payroll);
             $input['essentials_allowances'] = $allowances_and_deductions['essentials_allowances'];
             $input['essentials_deductions'] = $allowances_and_deductions['essentials_deductions'];
@@ -717,22 +769,20 @@ class PayrollController extends Controller
             // Remove old loan deductions from loans
             if (!empty($old_deductions['deduction_names']) && is_array($old_deductions['deduction_names'])) {
                 foreach ($old_deductions['deduction_names'] as $index => $deduction_name) {
-                    if (strpos($deduction_name, __('essentials::lang.loan')) !== false) {
-                        $old_loan_id = !empty($old_deductions['deduction_loan_ids'][$index]) ? $old_deductions['deduction_loan_ids'][$index] : null;
-                        $old_deduction_amount = !empty($old_deductions['deduction_amounts'][$index]) 
-                            ? $this->moduleUtil->num_uf($old_deductions['deduction_amounts'][$index]) 
-                            : 0;
+                    $old_loan_id = !empty($old_deductions['deduction_loan_ids'][$index]) ? $old_deductions['deduction_loan_ids'][$index] : null;
+                    $old_deduction_amount = !empty($old_deductions['deduction_amounts'][$index]) 
+                        ? $this->moduleUtil->num_uf($old_deductions['deduction_amounts'][$index]) 
+                        : 0;
+                    
+                    if (!empty($old_loan_id) && $old_deduction_amount > 0) {
+                        $old_loan = EssentialsLoan::where('business_id', $business_id)
+                            ->where('id', $old_loan_id)
+                            ->first();
                         
-                        if (!empty($old_loan_id) && $old_deduction_amount > 0) {
-                            $old_loan = EssentialsLoan::where('business_id', $business_id)
-                                ->where('id', $old_loan_id)
-                                ->first();
-                            
-                            if ($old_loan) {
-                                $old_loan->total_deduction_paid = max(0, ($old_loan->total_deduction_paid ?? 0) - $old_deduction_amount);
-                                $old_loan->total_deduction_paid = min($old_loan->total_deduction_paid, $old_loan->loan_amount);
-                                $old_loan->save();
-                            }
+                        if ($old_loan) {
+                            $old_loan->total_deduction_paid = max(0, ($old_loan->total_deduction_paid ?? 0) - $old_deduction_amount);
+                            $old_loan->total_deduction_paid = min($old_loan->total_deduction_paid, $old_loan->loan_amount);
+                            $old_loan->save();
                         }
                     }
                 }
@@ -743,22 +793,19 @@ class PayrollController extends Controller
             // Update loan total_deduction_paid with new deductions
             if (!empty($payroll['deduction_names']) && is_array($payroll['deduction_names'])) {
                 foreach ($payroll['deduction_names'] as $index => $deduction_name) {
-                    // Check if this deduction is for a loan
-                    if (strpos($deduction_name, __('essentials::lang.loan')) !== false) {
-                        // Get loan_id from deduction_loan_ids array at the same index
-                        $loan_id = !empty($payroll['deduction_loan_ids'][$index]) ? $payroll['deduction_loan_ids'][$index] : null;
+                    // Get loan_id from deduction_loan_ids array at the same index
+                    $loan_id = !empty($payroll['deduction_loan_ids'][$index]) ? $payroll['deduction_loan_ids'][$index] : null;
+                    
+                    if (!empty($loan_id) && isset($payroll['deduction_amounts'][$index])) {
+                        $loan = EssentialsLoan::where('business_id', $business_id)
+                            ->where('id', $loan_id)
+                            ->first();
                         
-                        if (!empty($loan_id) && isset($payroll['deduction_amounts'][$index])) {
-                            $loan = EssentialsLoan::where('business_id', $business_id)
-                                ->where('id', $loan_id)
-                                ->first();
-                            
-                            if ($loan) {
-                                $deduction_amount = $this->moduleUtil->num_uf($payroll['deduction_amounts'][$index]);
-                                $new_total = ($loan->total_deduction_paid ?? 0) + $deduction_amount;
-                                $loan->total_deduction_paid = min($new_total, $loan->loan_amount);
-                                $loan->save();
-                            }
+                        if ($loan) {
+                            $deduction_amount = $this->moduleUtil->num_uf($payroll['deduction_amounts'][$index]);
+                            $new_total = ($loan->total_deduction_paid ?? 0) + $deduction_amount;
+                            $loan->total_deduction_paid = min($new_total, $loan->loan_amount);
+                            $loan->save();
                         }
                     }
                 }
@@ -805,12 +852,43 @@ class PayrollController extends Controller
                 DB::beginTransaction();
                 if ($payroll_group->status == 'draft') {
                     $transaction_ids = $payroll_group->payrollGroupTransactions->pluck('id')->toArray();
+                    
+                    // Revert loan deductions for these transactions
+                    $transactions = Transaction::whereIn('id', $transaction_ids)->get();
+                    foreach ($transactions as $transaction) {
+                        if (!empty($transaction->essentials_deductions)) {
+                            $deductions = json_decode($transaction->essentials_deductions, true);
+                            if (!empty($deductions['deduction_names']) && is_array($deductions['deduction_names'])) {
+                                foreach ($deductions['deduction_names'] as $index => $deduction_name) {
+                                    $loan_id = !empty($deductions['deduction_loan_ids'][$index]) ? $deductions['deduction_loan_ids'][$index] : null;
+                                    $deduction_amount = !empty($deductions['deduction_amounts'][$index]) 
+                                        ? $this->moduleUtil->num_uf($deductions['deduction_amounts'][$index]) 
+                                        : 0;
+                                    
+                                    if (!empty($loan_id) && $deduction_amount > 0) {
+                                        $loan = EssentialsLoan::where('business_id', $business_id)
+                                            ->where('id', $loan_id)
+                                            ->first();
+                                        
+                                        if ($loan) {
+                                            $loan->total_deduction_paid = max(0, ($loan->total_deduction_paid ?? 0) - $deduction_amount);
+                                            $loan->save();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     //delete all account tranactions
                     AccountTransaction::whereIn('transaction_id', $transaction_ids)->delete();
                     //delete all transaction payments
                     TransactionPayment::whereIn('transaction_id', $transaction_ids)->delete();
 
                     $payroll_group->payrollGroupTransactions()->delete();
+                    // Also delete the transactions themselves
+                    Transaction::whereIn('id', $transaction_ids)->delete();
+                    
                     $payroll_group->delete();
                 }
 
@@ -1084,20 +1162,94 @@ class PayrollController extends Controller
             foreach ($payrolls as $key => $payroll) {
                 $transaction_id = $payroll['transaction_id'];
 
-                $payroll['total_before_tax'] = $payroll['final_total'];
-                $payroll['essentials_amount_per_unit_duration'] = $this->moduleUtil->num_uf($payroll['essentials_amount_per_unit_duration']);
-
-                $allowances_and_deductions = $this->getAllowanceAndDeductionJson($payroll);
-                $payroll['essentials_allowances'] = $allowances_and_deductions['essentials_allowances'];
-                $payroll['essentials_deductions'] = $allowances_and_deductions['essentials_deductions'];
-
-                unset($payroll['allowance_names'], $payroll['allowance_types'], $payroll['allowance_percent'], $payroll['allowance_amounts'], $payroll['deduction_names'], $payroll['deduction_types'], $payroll['deduction_percent'], $payroll['deduction_amounts'], $payroll['total'], $payroll['transaction_id']);
-
                 $payroll_trans = Transaction::where('business_id', $business_id)
                                         ->where('type', 'payroll')
                                         ->find($transaction_id);
 
                 if (! empty($payroll_trans)) {
+                    // Revert old deductions
+                    $old_deductions = !empty($payroll_trans->essentials_deductions) ? json_decode($payroll_trans->essentials_deductions, true) : [];
+                    if (!empty($old_deductions['deduction_names']) && is_array($old_deductions['deduction_names'])) {
+                        foreach ($old_deductions['deduction_names'] as $index => $deduction_name) {
+                            $old_loan_id = !empty($old_deductions['deduction_loan_ids'][$index]) ? $old_deductions['deduction_loan_ids'][$index] : null;
+                            $old_deduction_amount = !empty($old_deductions['deduction_amounts'][$index]) 
+                                ? $this->moduleUtil->num_uf($old_deductions['deduction_amounts'][$index]) 
+                                : 0;
+                            
+                            if (!empty($old_loan_id) && $old_deduction_amount > 0) {
+                                $old_loan = EssentialsLoan::where('business_id', $business_id)
+                                    ->where('id', $old_loan_id)
+                                    ->first();
+                                
+                                if ($old_loan) {
+                                    $old_loan->total_deduction_paid = max(0, ($old_loan->total_deduction_paid ?? 0) - $old_deduction_amount);
+                                    $old_loan->total_deduction_paid = min($old_loan->total_deduction_paid, $old_loan->loan_amount);
+                                    $old_loan->save();
+                                }
+                            }
+                        }
+                    }
+
+                    // Apply new deductions
+                    if (!empty($payroll['deduction_names']) && is_array($payroll['deduction_names'])) {
+                        foreach ($payroll['deduction_names'] as $index => $deduction_name) {
+                            $loan_id = !empty($payroll['deduction_loan_ids'][$index]) ? $payroll['deduction_loan_ids'][$index] : null;
+                            
+                            if (!empty($loan_id) && isset($payroll['deduction_amounts'][$index])) {
+                                $loan = EssentialsLoan::where('business_id', $business_id)
+                                    ->where('id', $loan_id)
+                                    ->first();
+                                
+                                if ($loan) {
+                                    $deduction_amount = $this->moduleUtil->num_uf($payroll['deduction_amounts'][$index]);
+                                    $new_total = ($loan->total_deduction_paid ?? 0) + $deduction_amount;
+                                    $loan->total_deduction_paid = min($new_total, $loan->loan_amount);
+                                    $loan->save();
+                                }
+                            }
+                        }
+                    }
+
+                    $payroll['total_before_tax'] = $payroll['final_total'];
+                    $payroll['essentials_amount_per_unit_duration'] = $this->moduleUtil->num_uf($payroll['essentials_amount_per_unit_duration']);
+
+                    // Auto-detect loan IDs from deduction names if missing (Smart Matching) - inside UpdatePayrollGroup
+                    if (!empty($payroll['deduction_names']) && is_array($payroll['deduction_names'])) {
+                        $user_loans = null;
+                        // For update group, we have $payroll['expense_for'] available? 
+                        // Actually in getUpdatePayrollGroup, $payrolls comes from request input.
+                        // Let's check view: name="payrolls[{{$employee}}][expense_for]"
+                        // Yes, it should be available.
+                        $expense_for = !empty($payroll['expense_for']) ? $payroll['expense_for'] : ($payroll_trans->expense_for ?? null);
+
+                        foreach ($payroll['deduction_names'] as $index => $deduction_name) {
+                            $existing_id = !empty($payroll['deduction_loan_ids'][$index]) ? $payroll['deduction_loan_ids'][$index] : null;
+
+                            if (empty($existing_id) && !empty($deduction_name)) {
+                                if (is_null($user_loans) && !empty($expense_for)) {
+                                    $user_loans = EssentialsLoan::where('business_id', $business_id)
+                                        ->where('user_id', $expense_for)
+                                        ->get();
+                                }
+
+                                if ($user_loans) {
+                                    foreach ($user_loans as $ul) {
+                                        if (!empty($ul->ref_no) && (stripos($deduction_name, $ul->ref_no) !== false)) {
+                                            $payroll['deduction_loan_ids'][$index] = $ul->id;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    $allowances_and_deductions = $this->getAllowanceAndDeductionJson($payroll);
+                    $payroll['essentials_allowances'] = $allowances_and_deductions['essentials_allowances'];
+                    $payroll['essentials_deductions'] = $allowances_and_deductions['essentials_deductions'];
+
+                    unset($payroll['allowance_names'], $payroll['allowance_types'], $payroll['allowance_percent'], $payroll['allowance_amounts'], $payroll['deduction_names'], $payroll['deduction_types'], $payroll['deduction_percent'], $payroll['deduction_amounts'], $payroll['total'], $payroll['transaction_id'], $payroll['deduction_loan_ids']);
+
                     $payroll_trans->update($payroll);
 
                     if ($notify_employee && $payroll_group->status == 'final') {
@@ -1548,25 +1700,10 @@ class PayrollController extends Controller
                 }
 
                 $employee_id = $payroll->expense_for;
+                $user_name = $payroll->transaction_for->user_full_name ?? $employee_id;
 
                 // Check each deduction
                 foreach ($deductions['deduction_names'] as $index => $deduction_name) {
-                    // Check if this deduction is for a loan (check multiple patterns)
-                    $is_loan_deduction = false;
-                    $deduction_name_lower = strtolower($deduction_name);
-                    
-                    // Check for various loan patterns
-                    if (strpos($deduction_name, __('essentials::lang.loan')) !== false ||
-                        strpos($deduction_name_lower, 'loan') !== false ||
-                        strpos($deduction_name_lower, 'empréstimo') !== false || // Portuguese
-                        preg_match('/\(L\d+\)/', $deduction_name)) { // Pattern like (L001)
-                        $is_loan_deduction = true;
-                    }
-                    
-                    if (!$is_loan_deduction) {
-                        continue;
-                    }
-
                     $deduction_amount = !empty($deductions['deduction_amounts'][$index]) 
                         ? $this->moduleUtil->num_uf($deductions['deduction_amounts'][$index]) 
                         : 0;
@@ -1575,36 +1712,77 @@ class PayrollController extends Controller
                         continue;
                     }
 
-                    $loan_id = null;
-
-                    // First, try to get loan_id from stored deduction_loan_ids
-                    if (!empty($deductions['deduction_loan_ids'][$index])) {
-                        $loan_id = $deductions['deduction_loan_ids'][$index];
+                    // Check if this deduction is for a loan (check multiple patterns)
+                    $is_loan_deduction = false;
+                    $deduction_name_lower = strtolower($deduction_name);
+                    
+                    // Check for various loan patterns
+                    if (strpos($deduction_name_lower, 'loan') !== false ||
+                        strpos($deduction_name_lower, 'advance') !== false || // Added "advance"
+                        strpos($deduction_name_lower, 'empréstimo') !== false || 
+                        preg_match('/\(L\d+\)/', $deduction_name)) { 
+                        $is_loan_deduction = true;
                     }
-                    // Second: try to match by loan ref_no from deduction name (e.g. "Loan (2026/0016)" -> 2026/0016)
-                    if (empty($loan_id) && preg_match('/\s*\(([^)]+)\)\s*$/', $deduction_name, $ref_match)) {
-                        $loan_ref = trim($ref_match[1]);
-                        $loan_by_ref = EssentialsLoan::where('business_id', $business_id)
+                    
+                    $matched_loan_id_by_name = null;
+                    
+                    // Always try to match by REF even if "loan" keyword is missing
+                    if (!isset($employee_loans_cache[$employee_id])) {
+                        $employee_loans_cache[$employee_id] = EssentialsLoan::where('business_id', $business_id)
                             ->where('user_id', $employee_id)
-                            ->where('ref_no', $loan_ref)
-                            ->first();
-                        if ($loan_by_ref) {
-                            $loan_id = $loan_by_ref->id;
+                            ->get();
+                    }
+                    
+                    foreach ($employee_loans_cache[$employee_id] as $el) {
+                        if (!empty($el->ref_no) && stripos($deduction_name, $el->ref_no) !== false) {
+                            $is_loan_deduction = true;
+                            $matched_loan_id_by_name = $el->id;
+                            break;
                         }
                     }
+                    
+                    if (!$is_loan_deduction) {
+                        $debug_log[] = "Skipped (Not Loan): User: $user_name, Ded: '$deduction_name', Amt: $deduction_amount";
+                        continue;
+                    }
+
+                    $loan_id = null;
+                    
+                    // If we matched by specific reference in the name, use that!
+                    if (!empty($matched_loan_id_by_name)) {
+                        $loan_id = $matched_loan_id_by_name;
+                    }
+
+                    // First, try to get loan_id from stored deduction_loan_ids
+                    if (empty($loan_id) && !empty($deductions['deduction_loan_ids'][$index])) {
+                        $loan_id = $deductions['deduction_loan_ids'][$index];
+                    }
+                    // Second: try to match by strict format "Loan (REF)"
+                    if (empty($loan_id) && preg_match('/\s*\(([^)]+)\)\s*$/', $deduction_name, $ref_match)) {
+                        $loan_ref = trim($ref_match[1]);
+                        foreach ($employee_loans_cache[$employee_id] as $el) {
+                            if ($el->ref_no == $loan_ref) {
+                                $loan_id = $el->id;
+                                break;
+                            }
+                        }
+                    }
+
                     // Third: fallback to oldest approved loan with remaining balance
                     if (empty($loan_id)) {
-                        $employee_loans = EssentialsLoan::where('business_id', $business_id)
-                            ->where('user_id', $employee_id)
-                            ->where('status', 'approved')
-                            ->whereDate('created_at', '<=', $payroll->transaction_date)
-                            ->orderBy('created_at', 'asc')
-                            ->get();
+                        // Filter loans that might be relevant
+                        // Relaxed date check: simply check if loan was created before or same day as payroll
+                        // or even slightly after (in case they created payroll then loan record same day)
+                        $candidate_loans = $employee_loans_cache[$employee_id]->filter(function($l) use ($payroll) {
+                            return $l->status == 'approved';
+                        })->sortBy('created_at');
 
-                        foreach ($employee_loans as $loan) {
+                        foreach ($candidate_loans as $loan) {
                             $current_total = isset($loan_deductions[$loan->id]) ? $loan_deductions[$loan->id] : 0;
                             $remaining = $loan->loan_amount - $current_total;
-                            if ($remaining > 0) {
+                            
+                            // If this loan still has balance to be paid, assign this deduction to it
+                            if ($remaining > 0.01) {
                                 $loan_id = $loan->id;
                                 break;
                             }
@@ -1612,29 +1790,36 @@ class PayrollController extends Controller
                     }
 
                     if (!empty($loan_id)) {
-                        // Verify the loan exists and belongs to the correct employee
-                        $loan = EssentialsLoan::where('business_id', $business_id)
-                            ->where('id', $loan_id)
-                            ->where('user_id', $employee_id)
-                            ->first();
+                        // Add deduction to this loan's total
+                        if (!isset($loan_deductions[$loan_id])) {
+                            $loan_deductions[$loan_id] = 0;
+                        }
+                        
+                        $current_total = $loan_deductions[$loan_id];
+                        // Find the loan object again to get loan_amount
+                        $loan_obj = $employee_loans_cache[$employee_id]->where('id', $loan_id)->first();
+                        $total_loan_amount = $loan_obj ? $loan_obj->loan_amount : 999999999;
 
-                        if ($loan) {
-                            // Add deduction to this loan's total
-                            if (!isset($loan_deductions[$loan_id])) {
-                                $loan_deductions[$loan_id] = 0;
-                            }
-                            $loan_deductions[$loan_id] += $deduction_amount;
+                        $remaining_capacity = $total_loan_amount - $current_total;
+                        
+                        $amount_to_add = min($deduction_amount, $remaining_capacity);
+                        
+                        if ($amount_to_add > 0) {
+                            $loan_deductions[$loan_id] += $amount_to_add;
                             $fixed_count++;
+                            $debug_log[] = "Matched: User: $user_name, Ded: '$deduction_name' ($deduction_amount) -> Loan: " . ($loan_obj ? $loan_obj->ref_no : $loan_id);
                         } else {
-                            $skipped_count++;
+                            $fixed_count++;
+                            $debug_log[] = "Matched (Full): User: $user_name, Ded: '$deduction_name' -> Loan: " . ($loan_obj ? $loan_obj->ref_no : $loan_id) . " (Already full)";
                         }
                     } else {
                         $skipped_count++;
+                        $debug_log[] = "Skipped (No Loan Found): User: $user_name, Ded: '$deduction_name', Amt: $deduction_amount";
                     }
                 }
             }
 
-            // Update all loans with the calculated total deductions (cap at loan_amount to avoid negative remaining)
+            // Update all loans with the calculated total deductions
             foreach ($loan_deductions as $loan_id => $total_deduction) {
                 $loan = EssentialsLoan::where('business_id', $business_id)
                     ->where('id', $loan_id)
@@ -1648,23 +1833,9 @@ class PayrollController extends Controller
 
             DB::commit();
 
-            // Build detailed message
-            $details = "Total Payrolls: " . count($payrolls) . ", ";
-            $details .= "Fixed: {$fixed_count} deductions, ";
-            $details .= "Skipped: {$skipped_count} deductions, ";
-            $details .= "Updated: " . count($loan_deductions) . " loans. ";
-            
-            // Show updated loans details
-            if (!empty($loan_deductions)) {
-                $details .= "Loans updated: ";
-                foreach ($loan_deductions as $lid => $amount) {
-                    $details .= "ID:{$lid}=€{$amount}, ";
-                }
-            }
-            
             $output = [
                 'success' => true,
-                'msg' => "Loan deductions fixed successfully. " . $details,
+                'msg' => "Fixed: $fixed_count, Skipped: $skipped_count. <br>Start Log:<br>" . implode("<br>", array_slice($debug_log, -20)) // Show last 20 logs
             ];
         } catch (\Exception $e) {
             DB::rollBack();
