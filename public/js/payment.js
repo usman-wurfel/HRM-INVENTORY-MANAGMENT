@@ -263,6 +263,9 @@ $(document).on('submit', 'form#transaction_payment_add_form', function(e){
                 if (typeof expense_table != 'undefined') {
                     expense_table.ajax.reload();
                 }
+                if (typeof payrolls_table != 'undefined') {
+                    payrolls_table.ajax.reload();
+                }
             } else {
                 toastr.error(result.msg);
                 submitBtn.prop('disabled', false).html(originalBtnText);

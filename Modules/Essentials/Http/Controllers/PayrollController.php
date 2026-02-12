@@ -145,10 +145,10 @@ class PayrollController extends Controller
                             }
                         }
 
-                        // $html .= '<li><a href="' . action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->id]) . '" class="view_payment_modal"><i class="fa fa-money"></i> ' . __("purchase.view_payments") . '</a></li>';
+                        $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->id]).'" class="view_payment_modal"><i class="fa fa-list-alt" aria-hidden="true"></i> '.__('purchase.view_payments').'</a></li>';
 
-                        if (empty($row->payroll_group_id) && $row->payment_status != 'paid' && auth()->user()->can('essentials.create_payroll')) {
-                            $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'addPayment'], [$row->id]).'" class="add_payment_modal"><i class="fa fa-money"></i> '.__('purchase.add_payment').'</a></li>';
+                        if ($row->payment_status != 'paid' && (auth()->user()->can('essentials.create_payroll') || auth()->user()->can('essentials.view_all_payroll'))) {
+                            $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'addPayment'], [$row->id]).'" class="add_payment_modal"><i class="fa fa-plus-circle" aria-hidden="true"></i> '.__('purchase.add_payment').'</a></li>';
                         }
 
                         $html .= '</ul></div>';
@@ -1579,9 +1579,20 @@ class PayrollController extends Controller
                     // First, try to get loan_id from stored deduction_loan_ids
                     if (!empty($deductions['deduction_loan_ids'][$index])) {
                         $loan_id = $deductions['deduction_loan_ids'][$index];
-                    } else {
-                        // If not stored, try to match with employee's active loans
-                        // Get loans for this employee that were created before or on the payroll date
+                    }
+                    // Second: try to match by loan ref_no from deduction name (e.g. "Loan (2026/0016)" -> 2026/0016)
+                    if (empty($loan_id) && preg_match('/\s*\(([^)]+)\)\s*$/', $deduction_name, $ref_match)) {
+                        $loan_ref = trim($ref_match[1]);
+                        $loan_by_ref = EssentialsLoan::where('business_id', $business_id)
+                            ->where('user_id', $employee_id)
+                            ->where('ref_no', $loan_ref)
+                            ->first();
+                        if ($loan_by_ref) {
+                            $loan_id = $loan_by_ref->id;
+                        }
+                    }
+                    // Third: fallback to oldest approved loan with remaining balance
+                    if (empty($loan_id)) {
                         $employee_loans = EssentialsLoan::where('business_id', $business_id)
                             ->where('user_id', $employee_id)
                             ->where('status', 'approved')
@@ -1589,8 +1600,6 @@ class PayrollController extends Controller
                             ->orderBy('created_at', 'asc')
                             ->get();
 
-                        // Try to find a loan that still has remaining balance
-                        // We'll match with the oldest loan that has remaining balance
                         foreach ($employee_loans as $loan) {
                             $current_total = isset($loan_deductions[$loan->id]) ? $loan_deductions[$loan->id] : 0;
                             $remaining = $loan->loan_amount - $current_total;

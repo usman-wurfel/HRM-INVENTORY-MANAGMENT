@@ -173,14 +173,22 @@ class TransactionPaymentController extends Controller
      */
     public function show($id)
     {
-        if (! (auth()->user()->can('sell.payments') || auth()->user()->can('purchase.payments') || auth()->user()->can('hms.add_booking_payment'))) {
-            abort(403, 'Unauthorized action.');
-        }
-
         if (request()->ajax()) {
-            $transaction = Transaction::where('id', $id)
+            $business_id = request()->session()->get('user.business_id');
+            $transaction = Transaction::where('business_id', $business_id)
+                                        ->where('id', $id)
                                         ->with(['contact', 'business', 'transaction_for'])
                                         ->first();
+            if (! $transaction) {
+                abort(404);
+            }
+            if ($transaction->type == 'payroll') {
+                if (! (auth()->user()->can('essentials.create_payroll') || auth()->user()->can('essentials.view_all_payroll'))) {
+                    abort(403, 'Unauthorized action.');
+                }
+            } elseif (! (auth()->user()->can('sell.payments') || auth()->user()->can('purchase.payments') || auth()->user()->can('hms.add_booking_payment'))) {
+                abort(403, 'Unauthorized action.');
+            }
             $payments_query = TransactionPayment::where('transaction_id', $id)
                                                 ->orderBy('paid_on', 'desc')
                                                 ->orderBy('id', 'desc');
@@ -396,16 +404,19 @@ class TransactionPaymentController extends Controller
      */
     public function addPayment($transaction_id)
     {
-        if (! auth()->user()->can('purchase.payments') && ! auth()->user()->can('sell.payments') && ! auth()->user()->can('all_expense.access') && ! auth()->user()->can('view_own_expense') && !auth()->user()->can('hms.add_booking_payment')) {
-            abort(403, 'Unauthorized action.');
-        }
-
         if (request()->ajax()) {
             $business_id = request()->session()->get('user.business_id');
 
             $transaction = Transaction::where('business_id', $business_id)
                                         ->with(['contact', 'location'])
                                         ->findOrFail($transaction_id);
+            if ($transaction->type == 'payroll') {
+                if (! (auth()->user()->can('essentials.create_payroll') || auth()->user()->can('essentials.view_all_payroll'))) {
+                    abort(403, 'Unauthorized action.');
+                }
+            } elseif (! auth()->user()->can('purchase.payments') && ! auth()->user()->can('sell.payments') && ! auth()->user()->can('all_expense.access') && ! auth()->user()->can('view_own_expense') && ! auth()->user()->can('hms.add_booking_payment')) {
+                abort(403, 'Unauthorized action.');
+            }
             if ($transaction->payment_status != 'paid') {
                 $show_advance = in_array($transaction->type, ['sell', 'purchase']) ? true : false;
                 // For expenses, if location is null or doesn't have payment accounts, use business_id

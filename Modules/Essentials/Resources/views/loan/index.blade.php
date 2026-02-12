@@ -273,7 +273,8 @@
                 var status = $(this).data('orig-value');
                 var status_note = $(this).data('status-note') || '';
                 var loan_amount = $(this).data('loan-amount') || 0;
-                var repayment_period = $(this).data('repayment-period') || '';
+                var repayment_period = $(this).data('repayment-period');
+                repayment_period = (repayment_period != null && repayment_period !== '') ? String(repayment_period) : '';
                 
                 // Calculate monthly deduction based on repayment period
                 var calculated_monthly_deduction = loan_amount; // Default to full amount
