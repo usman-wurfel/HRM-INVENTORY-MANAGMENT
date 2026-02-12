@@ -357,4 +357,7 @@ return [
         'gap_weeks_help' => 'Enter number of weeks to skip. Example: 1 means every 2nd week, 2 means every 3rd week',
         'repayment_period' => 'Repayment Period',
         'repayment_period_placeholder' => 'e.g., 1 month, 2 days, 6 months',
+        'amount_deducted' => 'Amount Deducted',
+        'amount_reverted' => 'Amount Reverted',
+        'total_paid' => 'Total Paid',
 ];

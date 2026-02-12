@@ -90,8 +90,25 @@
 		                        		@endif
 		                        		@if(!empty($activity->changes['attributes']['reason']))
 		                        			<strong>@lang('essentials::lang.reason'):</strong> {{$activity->changes['attributes']['reason']}}
+		                        			<br>
 		                        		@endif
-		                        		@if(empty($activity->changes['attributes']['status_note']) && empty($activity->changes['attributes']['status']) && empty($activity->changes['attributes']['reason']))
+                                        @if(isset($activity->changes['attributes']['total_deduction_paid']))
+                                            @php
+                                                $new_paid = $activity->changes['attributes']['total_deduction_paid'];
+                                                $old_paid = $activity->changes['old']['total_deduction_paid'] ?? 0;
+                                                $diff = $new_paid - $old_paid;
+                                            @endphp
+                                            @if($diff > 0)
+                                                <strong>@lang('essentials::lang.amount_deducted'):</strong> <span class="display_currency" data-currency_symbol="true">{{$diff}}</span>
+                                                <br>
+                                            @elseif($diff < 0)
+                                                <strong>@lang('essentials::lang.amount_reverted'):</strong> <span class="display_currency" data-currency_symbol="true">{{abs($diff)}}</span>
+                                                <br>
+                                            @endif
+                                            <strong>@lang('essentials::lang.total_paid'):</strong> <span class="display_currency" data-currency_symbol="true">{{$new_paid}}</span>
+                                            <br>
+                                        @endif
+		                        		@if(empty($activity->changes['attributes']['status_note']) && empty($activity->changes['attributes']['status']) && empty($activity->changes['attributes']['reason']) && !isset($activity->changes['attributes']['total_deduction_paid']))
 		                        			-
 		                        		@endif
 		                        	@elseif($activity->description == 'created')
