@@ -406,26 +406,47 @@ class PayrollController extends Controller
                 $payroll['total_before_tax'] = $payroll['final_total'];
                 $payroll['essentials_amount_per_unit_duration'] = $this->moduleUtil->num_uf($payroll['essentials_amount_per_unit_duration']);
 
-                // Auto-detect loan IDs from deduction names if missing (Smart Matching)
+                // Auto-detect loan IDs from deduction names if missing (Smart Matching + Fallback)
                 if (!empty($payroll['deduction_names']) && is_array($payroll['deduction_names'])) {
                     $user_loans = null;
                     foreach ($payroll['deduction_names'] as $index => $deduction_name) {
                         $existing_id = !empty($payroll['deduction_loan_ids'][$index]) ? $payroll['deduction_loan_ids'][$index] : null;
 
-                        if (empty($existing_id) && !empty($deduction_name)) {
+                        if (empty($existing_id) && !empty($deduction_name) && !empty($payroll['expense_for'])) {
                             // Fetch user loans cache if needed
-                            if (is_null($user_loans) && !empty($payroll['expense_for'])) {
+                            if (is_null($user_loans)) {
                                 $user_loans = EssentialsLoan::where('business_id', $business_id)
                                     ->where('user_id', $payroll['expense_for'])
                                     ->get();
                             }
 
-                            if ($user_loans) {
+                            if ($user_loans && $user_loans->count() > 0) {
+                                // 1. Try to match by Reference Number inside Name
                                 foreach ($user_loans as $ul) {
-                                    // Check if ref_no exists in deduction name
                                     if (!empty($ul->ref_no) && (stripos($deduction_name, $ul->ref_no) !== false)) {
                                         $payroll['deduction_loan_ids'][$index] = $ul->id;
-                                        break;
+                                        break; 
+                                    }
+                                }
+
+                                // 2. If still no match, check for keywords and pick oldest open loan
+                                if (empty($payroll['deduction_loan_ids'][$index])) {
+                                    $deduction_name_lower = strtolower($deduction_name);
+                                    if (strpos($deduction_name_lower, 'loan') !== false ||
+                                        strpos($deduction_name_lower, 'advance') !== false ||
+                                        strpos($deduction_name_lower, 'empréstimo') !== false || 
+                                        preg_match('/\(L\d+\)/', $deduction_name)) {
+                                        
+                                        // Find oldest approved loan with remaining balance
+                                        // Note: We don't have current deduction amounts processed yet for this transaction, 
+                                        // so we rely on database state. 
+                                        $candidate_loans = $user_loans->filter(function($l) {
+                                            return $l->status == 'approved' && ($l->loan_amount - ($l->total_deduction_paid ?? 0)) > 0.01;
+                                        })->sortBy('created_at');
+                                        
+                                        if ($candidate_loans->isNotEmpty()) {
+                                            $payroll['deduction_loan_ids'][$index] = $candidate_loans->first()->id;
+                                        }
                                     }
                                 }
                             }
@@ -726,27 +747,46 @@ class PayrollController extends Controller
             // Use already unformatted final_total from $input
             $payroll['final_total'] = $input['final_total'];
 
-            // Auto-detect loan IDs from deduction names if missing (Smart Matching)
+            // Auto-detect loan IDs from deduction names if missing (Smart Matching + Fallback)
             if (!empty($payroll['deduction_names']) && is_array($payroll['deduction_names'])) {
                 $user_loans = null;
-                $expense_for = $payroll_trans->expense_for ?? null; // Get user from existing transaction if possible
+                $expense_for = $payroll_trans->expense_for ?? null; // Get user from existing transaction
                 
                 foreach ($payroll['deduction_names'] as $index => $deduction_name) {
                     $existing_id = !empty($payroll['deduction_loan_ids'][$index]) ? $payroll['deduction_loan_ids'][$index] : null;
 
-                    if (empty($existing_id) && !empty($deduction_name)) {
+                    if (empty($existing_id) && !empty($deduction_name) && !empty($expense_for)) {
                         // Fetch user loans cache if needed
-                        if (is_null($user_loans) && !empty($expense_for)) {
+                        if (is_null($user_loans)) {
                             $user_loans = EssentialsLoan::where('business_id', $business_id)
                                 ->where('user_id', $expense_for)
                                 ->get();
                         }
 
-                        if ($user_loans) {
+                        if ($user_loans && $user_loans->count() > 0) {
+                            // 1. Try to match by Reference Number inside Name
                             foreach ($user_loans as $ul) {
                                 if (!empty($ul->ref_no) && (stripos($deduction_name, $ul->ref_no) !== false)) {
                                     $payroll['deduction_loan_ids'][$index] = $ul->id;
                                     break;
+                                }
+                            }
+
+                            // 2. If still no match, check for keywords and pick oldest open loan
+                            if (empty($payroll['deduction_loan_ids'][$index])) {
+                                $deduction_name_lower = strtolower($deduction_name);
+                                if (strpos($deduction_name_lower, 'loan') !== false ||
+                                    strpos($deduction_name_lower, 'advance') !== false ||
+                                    strpos($deduction_name_lower, 'empréstimo') !== false || 
+                                    preg_match('/\(L\d+\)/', $deduction_name)) {
+                                    
+                                    $candidate_loans = $user_loans->filter(function($l) {
+                                        return $l->status == 'approved' && ($l->loan_amount - ($l->total_deduction_paid ?? 0)) > 0.01;
+                                    })->sortBy('created_at');
+                                    
+                                    if ($candidate_loans->isNotEmpty()) {
+                                        $payroll['deduction_loan_ids'][$index] = $candidate_loans->first()->id;
+                                    }
                                 }
                             }
                         }
@@ -1213,30 +1253,45 @@ class PayrollController extends Controller
                     $payroll['total_before_tax'] = $payroll['final_total'];
                     $payroll['essentials_amount_per_unit_duration'] = $this->moduleUtil->num_uf($payroll['essentials_amount_per_unit_duration']);
 
-                    // Auto-detect loan IDs from deduction names if missing (Smart Matching) - inside UpdatePayrollGroup
+                    // Auto-detect loan IDs from deduction names if missing (Smart Matching + Fallback) - inside UpdatePayrollGroup
                     if (!empty($payroll['deduction_names']) && is_array($payroll['deduction_names'])) {
                         $user_loans = null;
-                        // For update group, we have $payroll['expense_for'] available? 
-                        // Actually in getUpdatePayrollGroup, $payrolls comes from request input.
-                        // Let's check view: name="payrolls[{{$employee}}][expense_for]"
-                        // Yes, it should be available.
                         $expense_for = !empty($payroll['expense_for']) ? $payroll['expense_for'] : ($payroll_trans->expense_for ?? null);
 
                         foreach ($payroll['deduction_names'] as $index => $deduction_name) {
                             $existing_id = !empty($payroll['deduction_loan_ids'][$index]) ? $payroll['deduction_loan_ids'][$index] : null;
 
-                            if (empty($existing_id) && !empty($deduction_name)) {
-                                if (is_null($user_loans) && !empty($expense_for)) {
+                            if (empty($existing_id) && !empty($deduction_name) && !empty($expense_for)) {
+                                if (is_null($user_loans)) {
                                     $user_loans = EssentialsLoan::where('business_id', $business_id)
                                         ->where('user_id', $expense_for)
                                         ->get();
                                 }
 
-                                if ($user_loans) {
+                                if ($user_loans && $user_loans->count() > 0) {
+                                    // 1. Try to match by Reference Number inside Name
                                     foreach ($user_loans as $ul) {
                                         if (!empty($ul->ref_no) && (stripos($deduction_name, $ul->ref_no) !== false)) {
                                             $payroll['deduction_loan_ids'][$index] = $ul->id;
                                             break;
+                                        }
+                                    }
+
+                                    // 2. If still no match, check for keywords and pick oldest open loan
+                                    if (empty($payroll['deduction_loan_ids'][$index])) {
+                                        $deduction_name_lower = strtolower($deduction_name);
+                                        if (strpos($deduction_name_lower, 'loan') !== false ||
+                                            strpos($deduction_name_lower, 'advance') !== false ||
+                                            strpos($deduction_name_lower, 'empréstimo') !== false || 
+                                            preg_match('/\(L\d+\)/', $deduction_name)) {
+                                            
+                                            $candidate_loans = $user_loans->filter(function($l) {
+                                                return $l->status == 'approved' && ($l->loan_amount - ($l->total_deduction_paid ?? 0)) > 0.01;
+                                            })->sortBy('created_at');
+                                            
+                                            if ($candidate_loans->isNotEmpty()) {
+                                                $payroll['deduction_loan_ids'][$index] = $candidate_loans->first()->id;
+                                            }
                                         }
                                     }
                                 }
