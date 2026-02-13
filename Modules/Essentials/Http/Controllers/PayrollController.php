@@ -1771,14 +1771,15 @@ class PayrollController extends Controller
                     // Third: fallback to oldest approved loan with remaining balance
                     if (empty($loan_id)) {
                         // Filter loans that might be relevant
-                        // Relaxed date check: simply check if loan was created before or same day as payroll
-                        // or even slightly after (in case they created payroll then loan record same day)
-                        $candidate_loans = $employee_loans_cache[$employee_id]->filter(function($l) use ($payroll) {
+                        // REMOVED DATE CHECK: Allow matching any approved loan regardless of creation date
+                        // This handles cases where loan logic/data entry is slightly out of sync with payroll dates
+                        $candidate_loans = $employee_loans_cache[$employee_id]->filter(function($l) {
                             return $l->status == 'approved';
                         })->sortBy('created_at');
 
                         foreach ($candidate_loans as $loan) {
                             $current_total = isset($loan_deductions[$loan->id]) ? $loan_deductions[$loan->id] : 0;
+                            // Calculate remaining based on the running total we are building
                             $remaining = $loan->loan_amount - $current_total;
                             
                             // If this loan still has balance to be paid, assign this deduction to it
@@ -1807,14 +1808,15 @@ class PayrollController extends Controller
                         if ($amount_to_add > 0) {
                             $loan_deductions[$loan_id] += $amount_to_add;
                             $fixed_count++;
-                            $debug_log[] = "Matched: User: $user_name, Ded: '$deduction_name' ($deduction_amount) -> Loan: " . ($loan_obj ? $loan_obj->ref_no : $loan_id);
+                            $debug_log[] = "Matched: User: $user_name, Ded: '$deduction_name' ($deduction_amount) -> Loan: " . ($loan_obj ? "{$loan_obj->ref_no} (ID:{$loan_obj->id})" : $loan_id);
                         } else {
                             $fixed_count++;
-                            $debug_log[] = "Matched (Full): User: $user_name, Ded: '$deduction_name' -> Loan: " . ($loan_obj ? $loan_obj->ref_no : $loan_id) . " (Already full)";
+                            $debug_log[] = "Matched (Full): User: $user_name, Ded: '$deduction_name' -> Loan: " . ($loan_obj ? "{$loan_obj->ref_no} (ID:{$loan_obj->id})" : $loan_id) . " (Already full)";
                         }
                     } else {
                         $skipped_count++;
-                        $debug_log[] = "Skipped (No Loan Found): User: $user_name, Ded: '$deduction_name', Amt: $deduction_amount";
+                        $loan_list_debug = $employee_loans_cache[$employee_id]->map(function($l){ return "{$l->ref_no} (Amt:{$l->loan_amount}, Date:".date('Y-m-d', strtotime($l->created_at)).")"; })->join(', ');
+                        $debug_log[] = "Skipped (No Loan Found): User: $user_name, Ded: '$deduction_name', Amt: $deduction_amount. <br>User's Loans: [ $loan_list_debug ]";
                     }
                 }
             }
