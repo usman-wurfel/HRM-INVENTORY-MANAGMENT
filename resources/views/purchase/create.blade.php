@@ -325,14 +325,19 @@
 							</td>
 						</tr>
 						<tr>
-							<th class="col-md-7 text-right">@lang( 'purchase.net_total_amount' ):</th>
+							<th class="col-md-7 text-right">@lang( 'purchase.subtotal_amount' ):</th>
 							<td class="col-md-5 text-left">
-								<span id="total_subtotal" class="display_currency"></span>
-								<!-- This is total before purchase tax-->
-								<input type="hidden" id="total_subtotal_input" value=0  name="total_before_tax">
+								<span id="total_subtotal" class="display_currency">0.00</span>
+								<!-- Sub total before purchase tax (products total without tax) -->
+								<input type="hidden" id="total_subtotal_input" value=0 name="total_before_tax">
 							</td>
 						</tr>
-						
+						<tr>
+							<th class="col-md-7 text-right"><strong>@lang( 'purchase.grand_total' ):</strong></th>
+							<td class="col-md-5 text-left">
+								<strong><span id="grand_total" class="display_currency">0.00</span></strong>
+							</td>
+						</tr>
 					</table>
 				</div>
 
