@@ -90,7 +90,9 @@ class PurchaseController extends Controller
                 $purchases->where('transactions.status', request()->status);
             }
 
-            if (! empty(request()->start_date) && ! empty(request()->end_date)) {
+            // Apply date range only when search box is empty (so ref/no search finds results regardless of date)
+            $search_value = trim(request()->input('search.value', ''));
+            if (! empty(request()->start_date) && ! empty(request()->end_date) && $search_value === '') {
                 $start = request()->start_date;
                 $end = request()->end_date;
                 $purchases->whereDate('transactions.transaction_date', '>=', $start)
