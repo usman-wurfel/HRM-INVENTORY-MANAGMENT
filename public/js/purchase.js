@@ -911,9 +911,8 @@ function update_purchase_entry_row_values(row) {
         row.find('.purchase_product_unit_tax_text').text(
             __currency_trans_from_en(unit_product_tax, false, true)
         );
-        row.find('.purchase_unit_cost_after_tax').text(
-            __currency_trans_from_en(unit_cost_price_after_tax, true)
-        );
+        // Use __write_number so input value is set (create uses input; .text() doesn't set input value)
+        __write_number(row.find('.purchase_unit_cost_after_tax'), unit_cost_price_after_tax, true);
         row.find('.row_subtotal_after_tax').text(
             __currency_trans_from_en(row_subtotal_after_tax, false, true)
         );
