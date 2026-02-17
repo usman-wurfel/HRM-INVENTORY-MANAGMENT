@@ -473,7 +473,6 @@ $(document).ready(function() {
         );
         __write_number(row.find('input.purchase_product_unit_tax'), tax, true);
 
-        //row.find('.purchase_product_unit_tax_text').text( tax );
         __write_number(row.find('input.purchase_unit_cost_after_tax'), purchase_after_tax, true);
         row.find('.row_subtotal_after_tax').text(
             __currency_trans_from_en(sub_total_after_tax, false, true)
@@ -562,7 +561,7 @@ $(document).ready(function() {
         );
 
         row.find('.purchase_product_unit_tax_text').text(__currency_trans_from_en(tax, true, true));
-        __write_number(row.find('input.purchase_product_unit_tax'), tax);
+        __write_number(row.find('input.purchase_product_unit_tax'), tax, true);
 
         update_table_total();
         update_grand_total();
@@ -1054,9 +1053,9 @@ function update_table_total() {
             }
             total_subtotal += subtotal_after_tax;
             
-            // Calculate tax for this line
-            // item_tax is already the total tax for the line (not per unit)
-            var line_tax = __read_number($(this).find('input.purchase_product_unit_tax'), true) || 0;
+            // Line tax = (subtotal after tax - subtotal before tax) so it's correct whether item_tax is stored per unit or total
+            var line_tax = (subtotal_after_tax || 0) - (subtotal_before_tax || 0);
+            if (line_tax < 0) { line_tax = 0; }
             total_tax += line_tax;
         });
 

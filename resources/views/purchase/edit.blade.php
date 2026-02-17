@@ -352,32 +352,12 @@
         }
       });
       
-      // Store original final_total to prevent auto-recalculation on page load
-      var original_final_total = __read_number($('input#grand_total_hidden'), true);
-      
-      // Update table totals for display only
+      // Recalculate totals from row data (subtotal, tax, grand total) so they match the table
       update_table_total();
-      
-      // Restore original final_total (don't let update_grand_total overwrite it)
-      __write_number($('input#grand_total_hidden'), original_final_total, true);
-      
-      // Update display with original value
-      if ($('#grand_total').length > 0) {
-        $('#grand_total').text(__currency_trans_from_en(original_final_total, true, true));
-      }
-      
-      // Update grand total when table totals change
-      $(document).on('change', '.purchase_quantity, .purchase_unit_cost, .purchase_unit_cost_after_tax, select.purchase_line_tax_id', function() {
-        setTimeout(function() {
-          var calculated_grand_total = __read_number($('input#grand_total_hidden'), true);
-          if ($('#grand_total').length > 0) {
-            $('#grand_total').text(__currency_trans_from_en(calculated_grand_total, true, true));
-          }
-        }, 100);
-      });
+      update_grand_total();
       
       var payment = __read_number($('input.payment-amount'), true);
-      var due = original_final_total - payment;
+      var due = __read_number($('input#grand_total_hidden'), true) - payment;
       $('#payment_due').text(__currency_trans_from_en(due, true, true));
       
       __page_leave_confirmation('#add_purchase_form');
