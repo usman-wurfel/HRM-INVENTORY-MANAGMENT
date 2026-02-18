@@ -303,11 +303,11 @@ $(document).ready(function() {
             true
         );
 
-        //Update tax display (showing total tax for the line)
+        //Update tax display (line total); backend expects per-unit in hidden
         row.find('.purchase_product_unit_tax_text').text(
             __currency_trans_from_en(total_tax, false, true)
         );
-        __write_number(row.find('input.purchase_product_unit_tax'), total_tax, true);
+        __write_number(row.find('input.purchase_product_unit_tax'), tax_per_unit, true);
 
         //Update purchase after tax
         __write_number(row.find('input.purchase_unit_cost_after_tax'), purchase_after_tax, true);
@@ -338,14 +338,15 @@ $(document).ready(function() {
 
         var sub_total_before_tax = quantity * purchase_before_tax;
 
-        //Tax
+        //Tax (per unit for backend; display line total)
         var tax_rate = parseFloat(
             row
                 .find('select.purchase_line_tax_id')
                 .find(':selected')
                 .data('tax_amount')
-        );
+        ) || 0;
         var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
+        var total_line_tax = tax * quantity;
 
         var purchase_after_tax = purchase_before_tax + tax;
         var sub_total_after_tax = quantity * purchase_after_tax;
@@ -366,7 +367,7 @@ $(document).ready(function() {
         __write_number(row.find('input.row_subtotal_after_tax_hidden'), sub_total_after_tax, true);
 
         row.find('.purchase_product_unit_tax_text').text(
-            __currency_trans_from_en(tax, false, true)
+            __currency_trans_from_en(total_line_tax, false, true)
         );
         __write_number(row.find('input.purchase_product_unit_tax'), tax, true);
 
@@ -395,14 +396,15 @@ $(document).ready(function() {
 
         var sub_total_before_tax = quantity * purchase_before_tax;
 
-        //Tax
+        //Tax (per unit for backend; display line total)
         var tax_rate = parseFloat(
             row
                 .find('select.purchase_line_tax_id')
                 .find(':selected')
                 .data('tax_amount')
-        );
+        ) || 0;
         var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
+        var total_line_tax = tax * quantity;
 
         var purchase_after_tax = purchase_before_tax + tax;
         var sub_total_after_tax = quantity * purchase_after_tax;
@@ -422,7 +424,7 @@ $(document).ready(function() {
         );
         __write_number(row.find('input.row_subtotal_after_tax_hidden'), sub_total_after_tax, true);
         row.find('.purchase_product_unit_tax_text').text(
-            __currency_trans_from_en(tax, false, true)
+            __currency_trans_from_en(total_line_tax, false, true)
         );
         __write_number(row.find('input.purchase_product_unit_tax'), tax, true);
 
@@ -447,14 +449,15 @@ $(document).ready(function() {
             true
         );
 
-        //Tax
+        //Tax (per unit for backend; display line total)
         var tax_rate = parseFloat(
             row
                 .find('select.purchase_line_tax_id')
                 .find(':selected')
                 .data('tax_amount')
-        );
+        ) || 0;
         var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
+        var total_line_tax = tax * quantity;
 
         var purchase_after_tax = purchase_before_tax + tax;
         var sub_total_after_tax = quantity * purchase_after_tax;
@@ -469,7 +472,7 @@ $(document).ready(function() {
         );
 
         row.find('.purchase_product_unit_tax_text').text(
-            __currency_trans_from_en(tax, false, true)
+            __currency_trans_from_en(total_line_tax, false, true)
         );
         __write_number(row.find('input.purchase_product_unit_tax'), tax, true);
 
@@ -489,20 +492,21 @@ $(document).ready(function() {
         var purchase_before_tax = __read_number(row.find('.purchase_unit_cost'), true);
         var quantity = __read_number(row.find('input.purchase_quantity'), true);
 
-        //Tax
+        //Tax (per unit for backend; display line total)
         var tax_rate = parseFloat(
             $(this)
                 .find(':selected')
                 .data('tax_amount')
-        );
+        ) || 0;
         var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
+        var total_line_tax = tax * quantity;
 
         //Purchase price
         var purchase_after_tax = purchase_before_tax + tax;
         var sub_total_after_tax = quantity * purchase_after_tax;
 
         row.find('.purchase_product_unit_tax_text').text(
-            __currency_trans_from_en(tax, false, true)
+            __currency_trans_from_en(total_line_tax, false, true)
         );
         __write_number(row.find('input.purchase_product_unit_tax'), tax, true);
 
@@ -524,16 +528,17 @@ $(document).ready(function() {
 
         var sub_total_after_tax = purchase_after_tax * quantity;
 
-        //Tax
+        //Tax (per unit for backend; display line total)
         var tax_rate = parseFloat(
             row
                 .find('select.purchase_line_tax_id')
                 .find(':selected')
                 .data('tax_amount')
-        );
+        ) || 0;
         var purchase_before_tax = __get_principle(purchase_after_tax, tax_rate);
         var sub_total_before_tax = quantity * purchase_before_tax;
         var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
+        var total_line_tax = tax * quantity;
 
         //Update unit cost price before discount
         var discount_percent = __read_number(row.find('input.inline_discounts'), true);
@@ -560,7 +565,7 @@ $(document).ready(function() {
             true
         );
 
-        row.find('.purchase_product_unit_tax_text').text(__currency_trans_from_en(tax, true, true));
+        row.find('.purchase_product_unit_tax_text').text(__currency_trans_from_en(total_line_tax, false, true));
         __write_number(row.find('input.purchase_product_unit_tax'), tax, true);
 
         update_table_total();
@@ -896,9 +901,10 @@ function update_purchase_entry_row_values(row) {
 
         var tax_rate = parseFloat(
             $('option:selected', row.find('.purchase_line_tax_id')).attr('data-tax_amount')
-        );
+        ) || 0;
 
         var unit_product_tax = __calculate_amount('percentage', tax_rate, unit_cost_price);
+        var total_line_tax = unit_product_tax * quantity;
 
         var unit_cost_price_after_tax = unit_cost_price + unit_product_tax;
         var row_subtotal_after_tax = quantity * unit_cost_price_after_tax;
@@ -909,7 +915,7 @@ function update_purchase_entry_row_values(row) {
         __write_number(row.find('.row_subtotal_before_tax_hidden'), row_subtotal_before_tax, true);
         __write_number(row.find('.purchase_product_unit_tax'), unit_product_tax, true);
         row.find('.purchase_product_unit_tax_text').text(
-            __currency_trans_from_en(unit_product_tax, false, true)
+            __currency_trans_from_en(total_line_tax, false, true)
         );
         // Use __write_number so input value is set (create uses input; .text() doesn't set input value)
         __write_number(row.find('.purchase_unit_cost_after_tax'), unit_cost_price_after_tax, true);

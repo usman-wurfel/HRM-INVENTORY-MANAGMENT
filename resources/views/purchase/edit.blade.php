@@ -330,7 +330,7 @@
   <script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>
   <script type="text/javascript">
     $(document).ready( function(){
-      // Ensure all row subtotals are properly calculated on page load
+      // Ensure all row subtotals and tax (line total display, per-unit hidden) are in sync on page load
       $('#purchase_entry_table tbody tr').each(function() {
         var row = $(this);
         var quantity = __read_number(row.find('.purchase_quantity'), true) || 0;
@@ -344,11 +344,17 @@
           row.find('.row_subtotal_before_tax').text(__currency_trans_from_en(subtotal_before_tax, true, true));
         }
         
-        // Calculate and update subtotal after tax
+        // Calculate and update subtotal after tax and row tax (line total display, per-unit for backend)
         if (quantity > 0 && purchase_price_inc_tax > 0) {
           var subtotal_after_tax = quantity * purchase_price_inc_tax;
           __write_number(row.find('.row_subtotal_after_tax_hidden'), subtotal_after_tax, true);
           row.find('.row_subtotal_after_tax').text(__currency_trans_from_en(subtotal_after_tax, true, true));
+          var subtotal_before_tax = __read_number(row.find('.row_subtotal_before_tax_hidden'), true) || 0;
+          var line_tax = (subtotal_after_tax || 0) - (subtotal_before_tax || 0);
+          if (line_tax < 0) line_tax = 0;
+          var tax_per_unit = quantity > 0 ? line_tax / quantity : 0;
+          row.find('.purchase_product_unit_tax_text').text(__currency_trans_from_en(line_tax, false, true));
+          __write_number(row.find('input.purchase_product_unit_tax'), tax_per_unit, true);
         }
       });
       

@@ -199,11 +199,16 @@ class ReportController extends Controller
                 $cash_out = $paid_amount;
                 $total_cash_out += $cash_out;
             } elseif ($transaction->type == 'expense') {
+                // Skip auto-generated expenses from purchase/purchase_return – payment already shown under the purchase
+                $notes = $transaction->additional_notes ?? '';
+                if (strpos($notes, 'Auto-generated from purchase') !== false) {
+                    continue;
+                }
                 // Get actual paid amount for expenses
                 $paid_amount = \App\TransactionPayment::where('transaction_id', $transaction->id)
                     ->sum('amount');
                 // For stock transfer expenses, show final_total even if unpaid
-                if (strpos($transaction->additional_notes ?? '', 'Stock Transfer') !== false) {
+                if (strpos($notes, 'Stock Transfer') !== false) {
                     $cash_out = $transaction->final_total;
                 } else {
                     $cash_out = $paid_amount > 0 ? $paid_amount : 0;

@@ -149,9 +149,9 @@
                         @endforeach
                     </select>
                     <span class="input-group-addon purchase_product_unit_tax_text">
-                        {{number_format($purchase_line->item_tax/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
+                        {{number_format($purchase_line->item_tax * $purchase_line->quantity/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
                     </span>
-                    {!! Form::hidden('purchases[' . $loop->index . '][item_tax]', number_format($purchase_line->item_tax/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'purchase_product_unit_tax']); !!}
+                    {!! Form::hidden('purchases[' . $loop->index . '][item_tax]', $purchase_line->item_tax/$purchase->exchange_rate, ['class' => 'purchase_product_unit_tax']); !!}
                 </div>
             </td>
             <td class="{{$hide_tax}}">
