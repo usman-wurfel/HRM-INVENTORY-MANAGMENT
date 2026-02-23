@@ -332,16 +332,23 @@ class SellController extends Controller
             }
 
             $with[] = 'payment_lines';
-            
+
             if (!empty($with)) {
                 foreach ($with as $relation) {
                     if ($relation == 'payment_lines' && !empty(request()->input('payment_method'))) {
-                        $sells->whereHas($relation, function ($query) {
-                            $query->where('method', request()->input('payment_method'));
-                        });
-                    } else {
-                        $sells->with($relation);
+                        $payment_method = request()->input('payment_method');
+                        if ($payment_method === 'multiple_pay') {
+                            $sells->whereRaw('(SELECT COUNT(DISTINCT tp.method) FROM transaction_payments tp WHERE tp.transaction_id = transactions.id) > 1');
+                        } else {
+                            $sells->whereHas($relation, function ($query) use ($payment_method) {
+                                $query->where('method', $payment_method);
+                            });
+                            $sells->whereDoesntHave($relation, function ($query) use ($payment_method) {
+                                $query->where('method', '!=', $payment_method);
+                            });
+                        }
                     }
+                    $sells->with($relation);
                 }
             }
 
@@ -708,7 +715,7 @@ class SellController extends Controller
         }
 
         $payment_types = $this->transactionUtil->payment_types(null, true, $business_id);
-
+        $payment_types['multiple_pay'] = __('lang_v1.checkout_multi_pay');
 
         return view('sell.index')
         ->with(compact('business_locations', 'customers', 'is_woocommerce', 'sales_representative', 'is_cmsn_agent_enabled', 'commission_agents', 'service_staffs', 'is_tables_enabled', 'is_service_staff_enabled', 'is_types_service_enabled', 'shipping_statuses', 'sources', 'payment_types'));
