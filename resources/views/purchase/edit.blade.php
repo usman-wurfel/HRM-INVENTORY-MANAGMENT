@@ -330,41 +330,48 @@
   <script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>
   <script type="text/javascript">
     $(document).ready( function(){
-      // Ensure all row subtotals and tax (line total display, per-unit hidden) are in sync on page load
+      var original_grand_total = __read_number($('input#grand_total_hidden'), true);
+
+      // Recalculate each row from selected tax rate so dropdown (e.g. IVA 23) always drives tax/line total
       $('#purchase_entry_table tbody tr').each(function() {
         var row = $(this);
         var quantity = __read_number(row.find('.purchase_quantity'), true) || 0;
-        var purchase_price_inc_tax = __read_number(row.find('.purchase_unit_cost_after_tax'), true) || 0;
         var purchase_price_before_tax = __read_number(row.find('input.purchase_unit_cost'), true) || 0;
-        
-        // Calculate and update subtotal before tax
-        if (quantity > 0 && purchase_price_before_tax > 0) {
-          var subtotal_before_tax = quantity * purchase_price_before_tax;
-          __write_number(row.find('.row_subtotal_before_tax_hidden'), subtotal_before_tax, true);
-          row.find('.row_subtotal_before_tax').text(__currency_trans_from_en(subtotal_before_tax, true, true));
-        }
-        
-        // Calculate and update subtotal after tax and row tax (line total display, per-unit for backend)
-        if (quantity > 0 && purchase_price_inc_tax > 0) {
-          var subtotal_after_tax = quantity * purchase_price_inc_tax;
-          __write_number(row.find('.row_subtotal_after_tax_hidden'), subtotal_after_tax, true);
-          row.find('.row_subtotal_after_tax').text(__currency_trans_from_en(subtotal_after_tax, true, true));
-          var subtotal_before_tax = __read_number(row.find('.row_subtotal_before_tax_hidden'), true) || 0;
-          var line_tax = (subtotal_after_tax || 0) - (subtotal_before_tax || 0);
-          if (line_tax < 0) line_tax = 0;
-          var tax_per_unit = quantity > 0 ? line_tax / quantity : 0;
-          row.find('.purchase_product_unit_tax_text').text(__currency_trans_from_en(line_tax, false, true));
-          __write_number(row.find('input.purchase_product_unit_tax'), tax_per_unit, true);
-        }
+        var tax_rate = parseFloat(row.find('select.purchase_line_tax_id').find(':selected').data('tax_amount')) || 0;
+
+        if (quantity <= 0 || purchase_price_before_tax <= 0) return;
+
+        var subtotal_before_tax = quantity * purchase_price_before_tax;
+        __write_number(row.find('.row_subtotal_before_tax_hidden'), subtotal_before_tax, true);
+        row.find('.row_subtotal_before_tax').text(__currency_trans_from_en(subtotal_before_tax, true, true));
+
+        var tax_per_unit = __calculate_amount('percentage', tax_rate, purchase_price_before_tax);
+        var purchase_after_tax = purchase_price_before_tax + tax_per_unit;
+        var line_tax = tax_per_unit * quantity;
+        var subtotal_after_tax = quantity * purchase_after_tax;
+
+        __write_number(row.find('input.purchase_unit_cost_after_tax'), purchase_after_tax, true);
+        __write_number(row.find('.row_subtotal_after_tax_hidden'), subtotal_after_tax, true);
+        row.find('.row_subtotal_after_tax').text(__currency_trans_from_en(subtotal_after_tax, true, true));
+        row.find('.purchase_product_unit_tax_text').text(__currency_trans_from_en(line_tax, false, true));
+        __write_number(row.find('input.purchase_product_unit_tax'), tax_per_unit, true);
       });
       
-      // Recalculate totals from row data (subtotal, tax, grand total) so they match the table
       update_table_total();
       update_grand_total();
-      
-      var payment = __read_number($('input.payment-amount'), true);
-      var due = __read_number($('input#grand_total_hidden'), true) - payment;
-      $('#payment_due').text(__currency_trans_from_en(due, true, true));
+
+      var calculated = __read_number($('input#grand_total_hidden'), true);
+      if (original_grand_total != null && !isNaN(original_grand_total) && Math.abs(calculated - original_grand_total) < 0.03) {
+        __write_number($('input#grand_total_hidden'), original_grand_total, true);
+        $('#grand_total').text(__currency_trans_from_en(original_grand_total, true, true));
+        var payment = __read_number($('input.payment-amount'), true);
+        var due = original_grand_total - payment;
+        $('#payment_due').text(__currency_trans_from_en(due, true, true));
+      } else {
+        var payment = __read_number($('input.payment-amount'), true);
+        var due = __read_number($('input#grand_total_hidden'), true) - payment;
+        $('#payment_due').text(__currency_trans_from_en(due, true, true));
+      }
       
       __page_leave_confirmation('#add_purchase_form');
     });
