@@ -201,11 +201,11 @@ class SellController extends Controller
                 $customer_id = request()->customer_id;
                 $sells->where('contacts.id', $customer_id);
             }
-            if (! empty(request()->start_date) && ! empty(request()->end_date)) {
-                $start = request()->start_date;
-                $end = request()->end_date;
+            if (! empty(request()->input('start_date')) && ! empty(request()->input('end_date'))) {
+                $start = request()->input('start_date');
+                $end = request()->input('end_date');
                 $sells->whereDate('transactions.transaction_date', '>=', $start)
-                            ->whereDate('transactions.transaction_date', '<=', $end);
+                    ->whereDate('transactions.transaction_date', '<=', $end);
             }
 
             //Check is_direct sell

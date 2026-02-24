@@ -146,13 +146,28 @@
                 "ajax": {
                     "url": "/sells",
                     "data": function(d) {
-                        if ($('#sell_list_filter_date_range').val()) {
-                            var start = $('#sell_list_filter_date_range').data('daterangepicker')
-                                .startDate.format('YYYY-MM-DD');
-                            var end = $('#sell_list_filter_date_range').data('daterangepicker').endDate
-                                .format('YYYY-MM-DD');
-                            d.start_date = start;
-                            d.end_date = end;
+                        var dateRangeEl = $('#sell_list_filter_date_range');
+                        if (dateRangeEl.length && dateRangeEl.val()) {
+                            var startStr = null, endStr = null;
+                            var picker = dateRangeEl.data('daterangepicker');
+                            if (picker && picker.startDate && picker.endDate) {
+                                startStr = picker.startDate.format('YYYY-MM-DD');
+                                endStr = picker.endDate.format('YYYY-MM-DD');
+                            } else {
+                                var parts = dateRangeEl.val().split(' ~ ');
+                                if (parts.length === 2 && typeof moment !== 'undefined') {
+                                    var m1 = moment(parts[0].trim(), moment_date_format);
+                                    var m2 = moment(parts[1].trim(), moment_date_format);
+                                    if (m1.isValid() && m2.isValid()) {
+                                        startStr = m1.format('YYYY-MM-DD');
+                                        endStr = m2.format('YYYY-MM-DD');
+                                    }
+                                }
+                            }
+                            if (startStr && endStr) {
+                                d.start_date = startStr;
+                                d.end_date = endStr;
+                            }
                         }
                         d.is_direct_sale = 1;
 
@@ -310,7 +325,7 @@
             });
 
             $(document).on('change',
-                '#sell_list_filter_location_id, #sell_list_filter_payment_status, #sales_cmsn_agnt, #service_staffs, #sell_list_filter_source, #payment_method',
+                '#sell_list_filter_location_id, #sell_list_filter_payment_status, #sell_list_filter_date_range, #sales_cmsn_agnt, #service_staffs, #sell_list_filter_source, #payment_method',
                 function() {
                     sell_table.ajax.reload();
                 });
