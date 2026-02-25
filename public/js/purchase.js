@@ -270,52 +270,32 @@ $(document).ready(function() {
         });
     });
 
-    //On Change of quantity
+    //On Change of quantity (invoice-style: round subtotal then tax = round(base*rate))
     $(document).on('change', '.purchase_quantity', function() {
         var row = $(this).closest('tr');
         var quantity = __read_number($(this), true);
         var purchase_before_tax = __read_number(row.find('input.purchase_unit_cost'), true);
 
-        //Calculate sub total before tax
-        var sub_total_before_tax = quantity * purchase_before_tax;
+        var precision = (typeof __currency_precision !== 'undefined' ? parseInt(__currency_precision, 10) : 2);
+        var roundTo = function(v) { return Math.round(v * Math.pow(10, precision)) / Math.pow(10, precision); };
+        var sub_total_before_tax = roundTo(quantity * purchase_before_tax);
 
-        //Recalculate tax based on current tax rate
         var tax_rate = parseFloat(
-            row
-                .find('select.purchase_line_tax_id')
-                .find(':selected')
-                .data('tax_amount')
+            row.find('select.purchase_line_tax_id').find(':selected').data('tax_amount')
         ) || 0;
-        var tax_per_unit = __calculate_amount('percentage', tax_rate, purchase_before_tax);
-        var total_tax = tax_per_unit * quantity;
+        var total_line_tax = roundTo(sub_total_before_tax * tax_rate / 100);
+        var tax_per_unit = quantity > 0 ? total_line_tax / quantity : 0;
+        var sub_total_after_tax = sub_total_before_tax + total_line_tax;
+        var purchase_after_tax = quantity > 0 ? sub_total_after_tax / quantity : purchase_before_tax;
 
-        //Calculate purchase after tax and subtotal
-        var purchase_after_tax = purchase_before_tax + tax_per_unit;
-        var sub_total_after_tax = quantity * purchase_after_tax;
+        row.find('.row_subtotal_before_tax').text(__currency_trans_from_en(sub_total_before_tax, false, true));
+        __write_number(row.find('input.row_subtotal_before_tax_hidden'), sub_total_before_tax, true);
 
-        //Update subtotal before tax
-        row.find('.row_subtotal_before_tax').text(
-            __currency_trans_from_en(sub_total_before_tax, false, true)
-        );
-        __write_number(
-            row.find('input.row_subtotal_before_tax_hidden'),
-            sub_total_before_tax,
-            true
-        );
-
-        //Update tax display (line total); backend expects per-unit in hidden
-        row.find('.purchase_product_unit_tax_text').text(
-            __currency_trans_from_en(total_tax, false, true)
-        );
+        row.find('.purchase_product_unit_tax_text').text(__currency_trans_from_en(total_line_tax, false, true));
         __write_number(row.find('input.purchase_product_unit_tax'), tax_per_unit, true);
 
-        //Update purchase after tax
         __write_number(row.find('input.purchase_unit_cost_after_tax'), purchase_after_tax, true);
-
-        //Update subtotal after tax
-        row.find('.row_subtotal_after_tax').text(
-            __currency_trans_from_en(sub_total_after_tax, false, true)
-        );
+        row.find('.row_subtotal_after_tax').text(__currency_trans_from_en(sub_total_after_tax, false, true));
         __write_number(row.find('input.row_subtotal_after_tax_hidden'), sub_total_after_tax, true);
 
         update_table_total();
@@ -336,40 +316,27 @@ $(document).ready(function() {
 
         __write_number(row.find('input.purchase_unit_cost'), purchase_before_tax, true);
 
-        var sub_total_before_tax = quantity * purchase_before_tax;
+        var precision = (typeof __currency_precision !== 'undefined' ? parseInt(__currency_precision, 10) : 2);
+        var roundTo = function(v) { return Math.round(v * Math.pow(10, precision)) / Math.pow(10, precision); };
+        var sub_total_before_tax = roundTo(quantity * purchase_before_tax);
 
-        //Tax (per unit for backend; display line total)
         var tax_rate = parseFloat(
-            row
-                .find('select.purchase_line_tax_id')
-                .find(':selected')
-                .data('tax_amount')
+            row.find('select.purchase_line_tax_id').find(':selected').data('tax_amount')
         ) || 0;
-        var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
-        var total_line_tax = tax * quantity;
+        var total_line_tax = roundTo(sub_total_before_tax * tax_rate / 100);
+        var tax_per_unit = quantity > 0 ? total_line_tax / quantity : 0;
+        var sub_total_after_tax = sub_total_before_tax + total_line_tax;
+        var purchase_after_tax = quantity > 0 ? sub_total_after_tax / quantity : purchase_before_tax;
 
-        var purchase_after_tax = purchase_before_tax + tax;
-        var sub_total_after_tax = quantity * purchase_after_tax;
-
-        row.find('.row_subtotal_before_tax').text(
-            __currency_trans_from_en(sub_total_before_tax, false, true)
-        );
-        __write_number(
-            row.find('input.row_subtotal_before_tax_hidden'),
-            sub_total_before_tax,
-            true
-        );
+        row.find('.row_subtotal_before_tax').text(__currency_trans_from_en(sub_total_before_tax, false, true));
+        __write_number(row.find('input.row_subtotal_before_tax_hidden'), sub_total_before_tax, true);
 
         __write_number(row.find('input.purchase_unit_cost_after_tax'), purchase_after_tax, true);
-        row.find('.row_subtotal_after_tax').text(
-            __currency_trans_from_en(sub_total_after_tax, false, true)
-        );
+        row.find('.row_subtotal_after_tax').text(__currency_trans_from_en(sub_total_after_tax, false, true));
         __write_number(row.find('input.row_subtotal_after_tax_hidden'), sub_total_after_tax, true);
 
-        row.find('.purchase_product_unit_tax_text').text(
-            __currency_trans_from_en(total_line_tax, false, true)
-        );
-        __write_number(row.find('input.purchase_product_unit_tax'), tax, true);
+        row.find('.purchase_product_unit_tax_text').text(__currency_trans_from_en(total_line_tax, false, true));
+        __write_number(row.find('input.purchase_product_unit_tax'), tax_per_unit, true);
 
         update_inline_profit_percentage(row);
         update_table_total();
@@ -394,39 +361,26 @@ $(document).ready(function() {
 
         __write_number(row.find('input.purchase_unit_cost'), purchase_before_tax, true);
 
-        var sub_total_before_tax = quantity * purchase_before_tax;
+        var precision = (typeof __currency_precision !== 'undefined' ? parseInt(__currency_precision, 10) : 2);
+        var roundTo = function(v) { return Math.round(v * Math.pow(10, precision)) / Math.pow(10, precision); };
+        var sub_total_before_tax = roundTo(quantity * purchase_before_tax);
 
-        //Tax (per unit for backend; display line total)
         var tax_rate = parseFloat(
-            row
-                .find('select.purchase_line_tax_id')
-                .find(':selected')
-                .data('tax_amount')
+            row.find('select.purchase_line_tax_id').find(':selected').data('tax_amount')
         ) || 0;
-        var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
-        var total_line_tax = tax * quantity;
+        var total_line_tax = roundTo(sub_total_before_tax * tax_rate / 100);
+        var tax_per_unit = quantity > 0 ? total_line_tax / quantity : 0;
+        var sub_total_after_tax = sub_total_before_tax + total_line_tax;
+        var purchase_after_tax = quantity > 0 ? sub_total_after_tax / quantity : purchase_before_tax;
 
-        var purchase_after_tax = purchase_before_tax + tax;
-        var sub_total_after_tax = quantity * purchase_after_tax;
-
-        row.find('.row_subtotal_before_tax').text(
-            __currency_trans_from_en(sub_total_before_tax, false, true)
-        );
-        __write_number(
-            row.find('input.row_subtotal_before_tax_hidden'),
-            sub_total_before_tax,
-            true
-        );
+        row.find('.row_subtotal_before_tax').text(__currency_trans_from_en(sub_total_before_tax, false, true));
+        __write_number(row.find('input.row_subtotal_before_tax_hidden'), sub_total_before_tax, true);
 
         __write_number(row.find('input.purchase_unit_cost_after_tax'), purchase_after_tax, true);
-        row.find('.row_subtotal_after_tax').text(
-            __currency_trans_from_en(sub_total_after_tax, false, true)
-        );
+        row.find('.row_subtotal_after_tax').text(__currency_trans_from_en(sub_total_after_tax, false, true));
         __write_number(row.find('input.row_subtotal_after_tax_hidden'), sub_total_after_tax, true);
-        row.find('.purchase_product_unit_tax_text').text(
-            __currency_trans_from_en(total_line_tax, false, true)
-        );
-        __write_number(row.find('input.purchase_product_unit_tax'), tax, true);
+        row.find('.purchase_product_unit_tax_text').text(__currency_trans_from_en(total_line_tax, false, true));
+        __write_number(row.find('input.purchase_product_unit_tax'), tax_per_unit, true);
 
         update_inline_profit_percentage(row);
         update_table_total();
@@ -438,48 +392,30 @@ $(document).ready(function() {
         var quantity = __read_number(row.find('input.purchase_quantity'), true);
         var purchase_before_tax = __read_number($(this), true);
 
-        var sub_total_before_tax = quantity * purchase_before_tax;
-
-        //Update unit cost price before discount
         var discount_percent = __read_number(row.find('input.inline_discounts'), true);
         var purchase_before_discount = __get_principle(purchase_before_tax, discount_percent, true);
-        __write_number(
-            row.find('input.purchase_unit_cost_without_discount'),
-            purchase_before_discount,
-            true
-        );
+        __write_number(row.find('input.purchase_unit_cost_without_discount'), purchase_before_discount, true);
 
-        //Tax (per unit for backend; display line total)
+        var precision = (typeof __currency_precision !== 'undefined' ? parseInt(__currency_precision, 10) : 2);
+        var roundTo = function(v) { return Math.round(v * Math.pow(10, precision)) / Math.pow(10, precision); };
+        var sub_total_before_tax = roundTo(quantity * purchase_before_tax);
+
         var tax_rate = parseFloat(
-            row
-                .find('select.purchase_line_tax_id')
-                .find(':selected')
-                .data('tax_amount')
+            row.find('select.purchase_line_tax_id').find(':selected').data('tax_amount')
         ) || 0;
-        var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
-        var total_line_tax = tax * quantity;
+        var total_line_tax = roundTo(sub_total_before_tax * tax_rate / 100);
+        var tax_per_unit = quantity > 0 ? total_line_tax / quantity : 0;
+        var sub_total_after_tax = sub_total_before_tax + total_line_tax;
+        var purchase_after_tax = quantity > 0 ? sub_total_after_tax / quantity : purchase_before_tax;
 
-        var purchase_after_tax = purchase_before_tax + tax;
-        var sub_total_after_tax = quantity * purchase_after_tax;
+        row.find('.row_subtotal_before_tax').text(__currency_trans_from_en(sub_total_before_tax, false, true));
+        __write_number(row.find('input.row_subtotal_before_tax_hidden'), sub_total_before_tax, true);
 
-        row.find('.row_subtotal_before_tax').text(
-            __currency_trans_from_en(sub_total_before_tax, false, true)
-        );
-        __write_number(
-            row.find('input.row_subtotal_before_tax_hidden'),
-            sub_total_before_tax,
-            true
-        );
-
-        row.find('.purchase_product_unit_tax_text').text(
-            __currency_trans_from_en(total_line_tax, false, true)
-        );
-        __write_number(row.find('input.purchase_product_unit_tax'), tax, true);
+        row.find('.purchase_product_unit_tax_text').text(__currency_trans_from_en(total_line_tax, false, true));
+        __write_number(row.find('input.purchase_product_unit_tax'), tax_per_unit, true);
 
         __write_number(row.find('input.purchase_unit_cost_after_tax'), purchase_after_tax, true);
-        row.find('.row_subtotal_after_tax').text(
-            __currency_trans_from_en(sub_total_after_tax, false, true)
-        );
+        row.find('.row_subtotal_after_tax').text(__currency_trans_from_en(sub_total_after_tax, false, true));
         __write_number(row.find('input.row_subtotal_after_tax_hidden'), sub_total_after_tax, true);
 
         update_inline_profit_percentage(row);
@@ -492,29 +428,24 @@ $(document).ready(function() {
         var purchase_before_tax = __read_number(row.find('.purchase_unit_cost'), true);
         var quantity = __read_number(row.find('input.purchase_quantity'), true);
 
-        //Tax (per unit for backend; display line total)
-        var tax_rate = parseFloat(
-            $(this)
-                .find(':selected')
-                .data('tax_amount')
-        ) || 0;
-        var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
-        var total_line_tax = tax * quantity;
+        var precision = (typeof __currency_precision !== 'undefined' ? parseInt(__currency_precision, 10) : 2);
+        var roundTo = function(v) { return Math.round(v * Math.pow(10, precision)) / Math.pow(10, precision); };
+        var sub_total_before_tax = roundTo(quantity * purchase_before_tax);
 
-        //Purchase price
-        var purchase_after_tax = purchase_before_tax + tax;
-        var sub_total_after_tax = quantity * purchase_after_tax;
+        var tax_rate = parseFloat($(this).find(':selected').data('tax_amount')) || 0;
+        var total_line_tax = roundTo(sub_total_before_tax * tax_rate / 100);
+        var tax_per_unit = quantity > 0 ? total_line_tax / quantity : 0;
+        var sub_total_after_tax = sub_total_before_tax + total_line_tax;
+        var purchase_after_tax = quantity > 0 ? sub_total_after_tax / quantity : purchase_before_tax;
 
-        row.find('.purchase_product_unit_tax_text').text(
-            __currency_trans_from_en(total_line_tax, false, true)
-        );
-        __write_number(row.find('input.purchase_product_unit_tax'), tax, true);
+        row.find('.row_subtotal_before_tax').text(__currency_trans_from_en(sub_total_before_tax, false, true));
+        __write_number(row.find('input.row_subtotal_before_tax_hidden'), sub_total_before_tax, true);
+
+        row.find('.purchase_product_unit_tax_text').text(__currency_trans_from_en(total_line_tax, false, true));
+        __write_number(row.find('input.purchase_product_unit_tax'), tax_per_unit, true);
 
         __write_number(row.find('input.purchase_unit_cost_after_tax'), purchase_after_tax, true);
-
-        row.find('.row_subtotal_after_tax').text(
-            __currency_trans_from_en(sub_total_after_tax, false, true)
-        );
+        row.find('.row_subtotal_after_tax').text(__currency_trans_from_en(sub_total_after_tax, false, true));
         __write_number(row.find('input.row_subtotal_after_tax_hidden'), sub_total_after_tax, true);
 
         update_table_total();
@@ -526,47 +457,34 @@ $(document).ready(function() {
         var purchase_after_tax = __read_number($(this), true);
         var quantity = __read_number(row.find('input.purchase_quantity'), true);
 
-        var sub_total_after_tax = purchase_after_tax * quantity;
-
-        //Tax (per unit for backend; display line total)
         var tax_rate = parseFloat(
-            row
-                .find('select.purchase_line_tax_id')
-                .find(':selected')
-                .data('tax_amount')
+            row.find('select.purchase_line_tax_id').find(':selected').data('tax_amount')
         ) || 0;
         var purchase_before_tax = __get_principle(purchase_after_tax, tax_rate);
-        var sub_total_before_tax = quantity * purchase_before_tax;
-        var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
-        var total_line_tax = tax * quantity;
 
-        //Update unit cost price before discount
+        var precision = (typeof __currency_precision !== 'undefined' ? parseInt(__currency_precision, 10) : 2);
+        var roundTo = function(v) { return Math.round(v * Math.pow(10, precision)) / Math.pow(10, precision); };
+        var sub_total_before_tax = roundTo(quantity * purchase_before_tax);
+        var total_line_tax = roundTo(sub_total_before_tax * tax_rate / 100);
+        var tax_per_unit = quantity > 0 ? total_line_tax / quantity : 0;
+        var sub_total_after_tax = sub_total_before_tax + total_line_tax;
+        var purchase_after_tax_rounded = quantity > 0 ? sub_total_after_tax / quantity : purchase_after_tax;
+
         var discount_percent = __read_number(row.find('input.inline_discounts'), true);
         var purchase_before_discount = __get_principle(purchase_before_tax, discount_percent, true);
-        __write_number(
-            row.find('input.purchase_unit_cost_without_discount'),
-            purchase_before_discount,
-            true
-        );
+        __write_number(row.find('input.purchase_unit_cost_without_discount'), purchase_before_discount, true);
 
-        row.find('.row_subtotal_after_tax').text(
-            __currency_trans_from_en(sub_total_after_tax, false, true)
-        );
+        row.find('.row_subtotal_after_tax').text(__currency_trans_from_en(sub_total_after_tax, false, true));
         __write_number(row.find('input.row_subtotal_after_tax_hidden'), sub_total_after_tax, true);
 
         __write_number(row.find('.purchase_unit_cost'), purchase_before_tax, true);
-
-        row.find('.row_subtotal_before_tax').text(
-            __currency_trans_from_en(sub_total_before_tax, false, true)
-        );
-        __write_number(
-            row.find('input.row_subtotal_before_tax_hidden'),
-            sub_total_before_tax,
-            true
-        );
+        row.find('.row_subtotal_before_tax').text(__currency_trans_from_en(sub_total_before_tax, false, true));
+        __write_number(row.find('input.row_subtotal_before_tax_hidden'), sub_total_before_tax, true);
 
         row.find('.purchase_product_unit_tax_text').text(__currency_trans_from_en(total_line_tax, false, true));
-        __write_number(row.find('input.purchase_product_unit_tax'), tax, true);
+        __write_number(row.find('input.purchase_product_unit_tax'), tax_per_unit, true);
+
+        __write_number(row.find('input.purchase_unit_cost_after_tax'), purchase_after_tax_rounded, true);
 
         update_table_total();
         update_grand_total();
@@ -897,17 +815,18 @@ function update_purchase_entry_row_values(row) {
     if (typeof row != 'undefined') {
         var quantity = __read_number(row.find('.purchase_quantity'), true);
         var unit_cost_price = __read_number(row.find('.purchase_unit_cost'), true);
-        var row_subtotal_before_tax = quantity * unit_cost_price;
+
+        var precision = (typeof __currency_precision !== 'undefined' ? parseInt(__currency_precision, 10) : 2);
+        var roundTo = function(v) { return Math.round(v * Math.pow(10, precision)) / Math.pow(10, precision); };
+        var row_subtotal_before_tax = roundTo(quantity * unit_cost_price);
 
         var tax_rate = parseFloat(
             $('option:selected', row.find('.purchase_line_tax_id')).attr('data-tax_amount')
         ) || 0;
-
-        var unit_product_tax = __calculate_amount('percentage', tax_rate, unit_cost_price);
-        var total_line_tax = unit_product_tax * quantity;
-
-        var unit_cost_price_after_tax = unit_cost_price + unit_product_tax;
-        var row_subtotal_after_tax = quantity * unit_cost_price_after_tax;
+        var total_line_tax = roundTo(row_subtotal_before_tax * tax_rate / 100);
+        var unit_product_tax = quantity > 0 ? total_line_tax / quantity : 0;
+        var row_subtotal_after_tax = row_subtotal_before_tax + total_line_tax;
+        var unit_cost_price_after_tax = quantity > 0 ? row_subtotal_after_tax / quantity : unit_cost_price;
 
         row.find('.row_subtotal_before_tax').text(
             __currency_trans_from_en(row_subtotal_before_tax, false, true)
@@ -917,7 +836,6 @@ function update_purchase_entry_row_values(row) {
         row.find('.purchase_product_unit_tax_text').text(
             __currency_trans_from_en(total_line_tax, false, true)
         );
-        // Use __write_number so input value is set (create uses input; .text() doesn't set input value)
         __write_number(row.find('.purchase_unit_cost_after_tax'), unit_cost_price_after_tax, true);
         row.find('.row_subtotal_after_tax').text(
             __currency_trans_from_en(row_subtotal_after_tax, false, true)
@@ -1020,7 +938,6 @@ function update_inline_profit_percentage(row) {
 function update_table_total() {
     var total_quantity = 0;
     var total_st_before_tax = 0;
-    var total_subtotal = 0;
     var total_tax = 0;
     var precision = (typeof __currency_precision !== 'undefined' ? parseInt(__currency_precision, 10) : 2);
     var roundTo = function(val) { return Math.round(val * Math.pow(10, precision)) / Math.pow(10, precision); };
@@ -1028,32 +945,21 @@ function update_table_total() {
     $('#purchase_entry_table tbody')
         .find('tr')
         .each(function() {
-            var quantity = __read_number($(this).find('.purchase_quantity'), true);
+            var row = $(this);
+            var quantity = __read_number(row.find('.purchase_quantity'), true);
             total_quantity += quantity || 0;
 
-            var purchase_price_before_tax = __read_number($(this).find('input.purchase_unit_cost'), true);
-            var qty = __read_number($(this).find('.purchase_quantity'), true);
-
-            var subtotal_before_tax = 0;
-            if (purchase_price_before_tax && qty) {
-                subtotal_before_tax = roundTo(purchase_price_before_tax * qty);
-            } else {
-                subtotal_before_tax = __read_number($(this).find('.row_subtotal_before_tax_hidden'), true) || 0;
-                subtotal_before_tax = roundTo(subtotal_before_tax);
+            var qty = __read_number(row.find('.purchase_quantity'), true);
+            var subtotal_before_tax = __read_number(row.find('.row_subtotal_before_tax_hidden'), true) || 0;
+            if (!subtotal_before_tax && qty) {
+                var purchase_price_before_tax = __read_number(row.find('input.purchase_unit_cost'), true);
+                if (purchase_price_before_tax) subtotal_before_tax = roundTo(purchase_price_before_tax * qty);
             }
+            subtotal_before_tax = roundTo(subtotal_before_tax);
             total_st_before_tax += subtotal_before_tax;
 
-            var purchase_price_inc_tax = __read_number($(this).find('.purchase_unit_cost_after_tax'), true);
-            var subtotal_after_tax = 0;
-            if (purchase_price_inc_tax && qty) {
-                subtotal_after_tax = roundTo(purchase_price_inc_tax * qty);
-            } else {
-                subtotal_after_tax = __read_number($(this).find('.row_subtotal_after_tax_hidden'), true) || 0;
-                subtotal_after_tax = roundTo(subtotal_after_tax);
-            }
-            total_subtotal += subtotal_after_tax;
-
-            var line_tax = roundTo((subtotal_after_tax || 0) - (subtotal_before_tax || 0));
+            var tax_rate = parseFloat(row.find('select.purchase_line_tax_id').find(':selected').data('tax_amount')) || 0;
+            var line_tax = roundTo(subtotal_before_tax * tax_rate / 100);
             if (line_tax < 0) line_tax = 0;
             total_tax += line_tax;
         });

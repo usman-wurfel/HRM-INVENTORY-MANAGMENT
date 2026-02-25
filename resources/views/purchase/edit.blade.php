@@ -332,7 +332,10 @@
     $(document).ready( function(){
       var original_grand_total = __read_number($('input#grand_total_hidden'), true);
 
-      // Recalculate each row from selected tax rate so dropdown (e.g. IVA 23) always drives tax/line total
+      var precision = (typeof __currency_precision !== 'undefined' ? parseInt(__currency_precision, 10) : 2);
+      var roundTo = function(v) { return Math.round(v * Math.pow(10, precision)) / Math.pow(10, precision); };
+
+      // Recalculate each row (invoice-style: round subtotal then tax = round(base*rate))
       $('#purchase_entry_table tbody tr').each(function() {
         var row = $(this);
         var quantity = __read_number(row.find('.purchase_quantity'), true) || 0;
@@ -341,14 +344,14 @@
 
         if (quantity <= 0 || purchase_price_before_tax <= 0) return;
 
-        var subtotal_before_tax = quantity * purchase_price_before_tax;
+        var subtotal_before_tax = roundTo(quantity * purchase_price_before_tax);
+        var line_tax = roundTo(subtotal_before_tax * tax_rate / 100);
+        var subtotal_after_tax = subtotal_before_tax + line_tax;
+        var tax_per_unit = quantity > 0 ? line_tax / quantity : 0;
+        var purchase_after_tax = quantity > 0 ? subtotal_after_tax / quantity : purchase_price_before_tax;
+
         __write_number(row.find('.row_subtotal_before_tax_hidden'), subtotal_before_tax, true);
         row.find('.row_subtotal_before_tax').text(__currency_trans_from_en(subtotal_before_tax, true, true));
-
-        var tax_per_unit = __calculate_amount('percentage', tax_rate, purchase_price_before_tax);
-        var purchase_after_tax = purchase_price_before_tax + tax_per_unit;
-        var line_tax = tax_per_unit * quantity;
-        var subtotal_after_tax = quantity * purchase_after_tax;
 
         __write_number(row.find('input.purchase_unit_cost_after_tax'), purchase_after_tax, true);
         __write_number(row.find('.row_subtotal_after_tax_hidden'), subtotal_after_tax, true);

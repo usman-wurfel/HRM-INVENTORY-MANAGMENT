@@ -136,7 +136,7 @@
                 <span class="row_subtotal_before_tax">
                     {{number_format($purchase_line->quantity * $purchase_line->purchase_price/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
                 </span>
-                <input type="hidden" class="row_subtotal_before_tax_hidden" value="{{number_format($purchase_line->quantity * $purchase_line->purchase_price/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}">
+                <input type="hidden" class="row_subtotal_before_tax_hidden" value="{{ $purchase_line->quantity * $purchase_line->purchase_price / $purchase->exchange_rate }}">
             </td>
 
             <td>
@@ -161,7 +161,7 @@
                 <span class="row_subtotal_after_tax">
                 {{number_format($purchase_line->purchase_price_inc_tax * $purchase_line->quantity/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
                 </span>
-                <input type="hidden" class="row_subtotal_after_tax_hidden" value="{{number_format($purchase_line->purchase_price_inc_tax * $purchase_line->quantity/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}">
+                <input type="hidden" class="row_subtotal_after_tax_hidden" value="{{ $purchase_line->purchase_price_inc_tax * $purchase_line->quantity / $purchase->exchange_rate }}">
             </td>
 
             <td class="@if(!session('business.enable_editing_product_from_purchase') || !empty($is_purchase_order)) hide @endif">
